@@ -50,8 +50,9 @@ $ clay test.lisp
 
 ### TODO:
 
-* write the bytecode generator.
+* write the bytecode compiler.
 * write the bytecode interpreter.
 * enable saving of byte code to a file.
 * add a token counter to the lexer (keeps track of how many tokens it has found.
   to make dealing with the parser easier.)
+* optimize the parser. or maybe even write a newer faster one.
