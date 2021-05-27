@@ -22,4 +22,4 @@ Cargo.lock
 
 # graveyard code
 
-/src/parser/parser_graveyard.rs
+/src/parser_graveyard.rs
