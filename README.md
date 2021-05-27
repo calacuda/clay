@@ -5,7 +5,7 @@ interpreter written in rust. Development is tested against SBCL.
 
 ### whats working:
 
-* lexer from [this github](https://github.com/samrat/rusl/blob/master/src/lexer.rs, "samrat/rusl")
+* lexer from [this github](https://github.com/samrat/rusl/blob/master/src/lexer.rs "samrat/rusl")
 * parser successfully give a syntax tree.
 
 ### building clay:
@@ -50,8 +50,8 @@ $ clay test.lisp
 
 ### TODO:
 
-* add a token counter to the lexer (keeps track of how many tokens it has found.
-  to make dealing with the parser easier.)
 * write the bytecode generator.
 * write the bytecode interpreter.
 * enable saving of byte code to a file.
+* add a token counter to the lexer (keeps track of how many tokens it has found.
+  to make dealing with the parser easier.)
