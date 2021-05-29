@@ -23,3 +23,14 @@ Cargo.lock
 # graveyard code
 
 /src/parser_graveyard.rs
+/src/*_graveyard.rs
+
+
+# manual backups
+
+*.bak
+
+
+# misc
+
+/src/iterpreter.rs

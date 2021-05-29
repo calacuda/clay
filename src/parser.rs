@@ -9,8 +9,9 @@ pub mod lexer;
 pub struct Node<'arb> {
     pub parent_id: Option<NodeID>,
     pub id: NodeID,
-    pub children: Vec<NodeID>,
+    pub children: Vec<Node<'arb>>,
     pub data: Option<lexer::Token<'arb>>,
+    // pub bytecode: Vec<Bytecode<'arb>>,
 }
 
 #[derive(Debug, Clone)]
@@ -25,15 +26,16 @@ impl<'arb> Node<'arb> {
             parent_id: None,
             children: Vec::new(),
             data: None,
+            // bytecode: Vec::new(),
         }
     }
 
-    pub fn add_child(mut self, node_id: NodeID) -> Node<'arb> {
+    pub fn add_child(mut self, node_id: Node<'arb>) -> Node<'arb> {
         self.children.push(node_id);
         return self;
     }
 
-    pub fn add_children(mut self, mut node_id: Vec<NodeID>) -> Node<'arb> {
+    pub fn add_children(mut self, mut node_id: Vec<Node<'arb>>) -> Node<'arb> {
         self.children.append(&mut node_id);
         return self;
     }
@@ -52,6 +54,11 @@ impl<'arb> Node<'arb> {
         self.parent_id = Some(pid);
         return self;
     }
+
+    // pub fn set_bytecode(mut self, code: Vec<Bytecode<'arb>>) -> Node<'arb> {
+    //     self.bytecode = code;
+    //     return self;
+    // }
 }
 
 impl NodeID {
@@ -63,7 +70,7 @@ impl NodeID {
 }
 
 fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: usize, uid: usize,
-                last_paren: char) -> (Vec<Node<'arb>>, Vec<NodeID>, lexer::Token<'arb>, (usize, usize)) { // id = id for the node.
+                last_paren: char) -> (Vec<Node<'arb>>, Vec<Node<'arb>>, lexer::Token<'arb>, (usize, usize)) { // id = id for the node.
     /*
      * this is a big, scarry, recurive function, with a loop in it. aka it's the two things
      * that should NEVER be used together. bassically it recurses though the source code based on
@@ -106,10 +113,14 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
                 next_tok = lex.get_token();
                 u_id = lex.pos;
                 let (mut child_block, cids, nt_cp, p_count) = _parse(lex, next_tok, uid, u_id + 1, 'l');
+
+                // let mut child_clone = child_block.clone();
+
                 block.append(&mut child_block);
                 node = node.add_children(cids);
+                let tmp_node = node.clone();
                 block.push(node);
-                created_ids.push(cp_id);
+                created_ids.push(tmp_node);
                 lp += p_count.0;
                 rp += p_count.1;
                 tok = nt_cp;
@@ -128,8 +139,9 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
 
             lexer::Token::Symbol(_) | lexer::Token::Number(_) => {
                 node = node.add_data(tok).set_parent(NodeID::new(pid));
+                let tmp_node = node.clone();
                 block.push(node);
-                created_ids.push(cp_id);
+                created_ids.push(tmp_node);
                 tok = nt_cp;
                 u_id += 1;
             }
@@ -154,7 +166,7 @@ pub fn parse(source_code: &String) -> Vec<Node> {
     let mut lex = lexer::Lexer::new(source_code);
     let next_tok = lex.get_token();
     let u_id = lex.pos;
-    let (mut nodes, _, _, _) = _parse(&mut lex, next_tok, 0, u_id, 'l');
+    let (_, mut nodes, _, _) = _parse(&mut lex, next_tok, 0, u_id, 'l');
     nodes.sort_by_key(|d| d.id.index);
     return nodes;
 }

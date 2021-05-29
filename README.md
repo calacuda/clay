@@ -5,8 +5,10 @@ interpreter written in rust. Development is tested against SBCL.
 
 ### whats working:
 
-* lexer from [this github](https://github.com/samrat/rusl/blob/master/src/lexer.rs "samrat/rusl")
-* parser successfully give a syntax tree.
+* lexer (src/lexer.rs) from [this github](https://github.com/samrat/rusl/blob/master/src/lexer.rs "samrat/rusl").
+* parser (src/parser.rs) successfully give a syntax tree.
+* bytecode compiler (src/bcc.rs) compiles bytecode well know if it works when
+  the bytecode interpreter gets written.
 
 ### building clay:
 
@@ -38,7 +40,7 @@ Consider this lisp function that calculates factorials recursively.
 (terpri)
 ```
 
-This code is stored in the test.lisp file. To run it with sbcl one would type:
+This code is stored in the "test.lisp" file. To run it with sbcl one would type:
 ```
 $ sbcl --script test.lisp
 ```
