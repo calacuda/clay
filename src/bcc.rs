@@ -169,17 +169,25 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>, user_funcs: &HashSet
 
                 if node.children.len() > 2 {
                     code.push(Bytecode::MakeFunc(node.children[1].children.len() + 1));
-                    code.push(Bytecode::StoreName(node.children[1].data.clone().unwrap()));
+
+                    // code.push(Bytecode::StoreName(node.children[1].data.clone().unwrap()));
+
+                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap()));
+
                     for child in &node.children[1].children {
                         code.push(Bytecode::StoreName(child.data.clone().unwrap()));
                     }
+
                 }
                 else {
                     code.push(Bytecode::MakeFunc(0));
-                    // code.push(Bytecode::StoreName(node.children[1].data.clone().unwrap()));
-                    for child in &node.children[0].children {
-                        code.push(Bytecode::StoreName(child.data.clone().unwrap()));
-                    }
+                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap()));
+
+                    // for child in &node.children[0].children {
+                    //     code.push(Bytecode::StoreName(child.data.clone().unwrap()));
+                    // }
+
+
                 }
 
                 //break;

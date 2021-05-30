@@ -61,11 +61,11 @@ fn main() {
     let sc = read_source("test.lisp".to_string());
     let parsed = parser::parse(&sc);
     let stdlib = std_lib::get_std_funcs();
-    // test_parser(&parsed);
+    test_parser(&parsed);
     // test_parser2(&parsed[0]);
     // test_parser2(&parsed[0].children[0]);
     // test_parser2(&parsed[0].children[1]);
-    // test_parser2(&parsed[0].children[2]);
+    test_parser2(&parsed[0].children[2]);
     // println!("bcc output:\n{:?}", bcc::get_bytecode(&parsed, &stdlib));
     println!();
     pp_bytecode(bcc::get_bytecode(&parsed, &stdlib));
