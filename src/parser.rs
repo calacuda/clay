@@ -96,6 +96,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
     let mut lp = 0;
     let mut rp = 0;
     let mut sym_seen = false;
+    // println!("called on: {:?}", tok);
 
     loop {
         next_tok = lex.get_token();
@@ -105,25 +106,47 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
         let cp_id = id.clone();
         let mut node = Node::new(id).set_parent(NodeID::new(pid));
 
+        // println!("{:?}, {:?}", tok, nt_cp);
+        // println!("{:?}", tok);
+
         match tok {
             lexer::Token::LParen => {
-                lp += 1;
-                node = node.add_data(next_tok);
-                u_id += 1;
-                next_tok = lex.get_token();
-                u_id = lex.pos;
-                let (mut child_block, cids, nt_cp, p_count) = _parse(lex, next_tok, uid, u_id + 1, 'l');
+                // lp += 1;
+                // if next_tok == lexer::Token::RParen {
+                //     // println!("reasigning next_tok");
+                //     // next_tok = lex.get_token();
+                //     println!("breaking");
+                //     // break;
+                // }
 
-                // let mut child_clone = child_block.clone();
+                if next_tok != lexer::Token::RParen {
+                    // println!("added {:?} to node", next_tok);
+                    node = node.add_data(next_tok);
+                    u_id += 1;
+                    next_tok = lex.get_token();
+                    u_id = lex.pos;
+                    // println!("before: {} {}", lp, rp);
 
-                block.append(&mut child_block);
-                node = node.add_children(cids);
-                let tmp_node = node.clone();
-                block.push(node);
-                created_ids.push(tmp_node);
-                lp += p_count.0;
-                rp += p_count.1;
-                tok = nt_cp;
+                    let (mut child_block, cids, nt_cp, p_count) = _parse(lex, next_tok, uid, u_id + 1, 'l');
+
+                    // let mut child_clone = child_block.clone();
+                    block.append(&mut child_block);
+                    node = node.add_children(cids);
+                    let tmp_node = node.clone();
+                    block.push(node);
+                    created_ids.push(tmp_node);
+                    lp += p_count.0 + 1;
+                    rp += p_count.1;
+                    if nt_cp == lexer::Token::EOF {
+                        rp = 0;
+                        lp = 0;
+                    }
+                    tok = nt_cp;
+                    // println!("after: {} {}", lp, rp);
+                }
+                else {
+                    next_tok = lex.get_token();
+                }
             }
 
             lexer::Token::RParen => {
@@ -138,6 +161,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
             }
 
             lexer::Token::Symbol(_) | lexer::Token::Number(_) => {
+                // println!("added {:?} to node", tok);
                 node = node.add_data(tok).set_parent(NodeID::new(pid));
                 let tmp_node = node.clone();
                 block.push(node);
@@ -148,16 +172,19 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
 
             lexer::Token::EOF => {
                 u_id += 1;
+                // println!("{:?}, {:?}", tok, nt_cp);
                 tok = nt_cp;
-
-                if lp != rp { // may cause error pls error check.
+                if lp > rp { // may cause error pls error check.
                     panic!("ERROR: unclosed left parenthesis.")
                 }
-
+                else if lp < rp {
+                    panic!("ERROR: too many right parenthesis.")
+                }
                 break;
             }
         }
     }
+
     return (block, created_ids, tok, (lp, rp));
 }
 

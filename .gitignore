@@ -34,3 +34,4 @@ Cargo.lock
 # misc
 
 /src/iterpreter.rs
+*.txt
