@@ -160,7 +160,10 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
                 break;
             }
 
-            lexer::Token::Symbol(_) | lexer::Token::Number(_) => {
+            lexer::Token::Symbol(_) |
+            lexer::Token::Number(_) |
+            lexer::Token::Str(_) |
+            lexer::Token::Bool(_) => {
                 // println!("added {:?} to node", tok);
                 node = node.add_data(tok).set_parent(NodeID::new(pid));
                 let tmp_node = node.clone();

@@ -3,7 +3,10 @@ takes the parsed code outputs bytecode.
 */
 
 use crate::parser;
-use crate::parser::lexer;
+use crate::parser::{
+    lexer,
+    lexer::Token,
+};
 // use crate::std_lib;
 
 use std::collections::HashSet;
@@ -12,7 +15,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub enum Bytecode<'input> {
     //Stack stuff
-    Push(lexer::Token<'input>),
+    Push(lexer::Token<'input>), // pushes a const to the stack
     Pop,
     Clr,
     Block(&'input str),
@@ -42,7 +45,7 @@ pub enum Bytecode<'input> {
     //Functions
     CallFunc(usize),
     MakeFunc(usize),
-    LoadFunc(&'input str),
+    LoadFunc(lexer::Token<'input>),
 
     //fLoW cOnTrOl
     JumpIfTrue(&'input str),
@@ -50,6 +53,7 @@ pub enum Bytecode<'input> {
                        // figure out the mechanics of that.
 }
 
+#[derive(Debug, Clone)]
 pub enum Nargs {
     INF,
     Num(usize),
@@ -123,14 +127,18 @@ pub enum Nargs {
 //     return code;
 // }
 
-fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>, user_funcs: &HashSet<&'input str>, stdlib: &HashMap<&'input str, Nargs>) -> Vec<Bytecode<'input>> {
+fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
+                         user_funcs: &HashSet<&'input str>,
+                         stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r> Fn(Vec<Token<'r>>) -> Result<Option<Token<'_>>, &str> + 'input))>) -> Vec<Bytecode<'input>> {
     let mut gen_funcs = Vec::new();
     let mut code = Vec::new();
     // println!("\ndat:{:?}", user_funcs);
 
+    // println!("\n{:?}\n", parsed);
+
     for node in parsed.iter() {
-        // println!("{:?}", node.data);
-        match node.data {
+        // println!("node data: {:?}", node.data);
+        match &node.data {
             Some(lexer::Token::Symbol("+" | "*" | "/" | "-")) => { // math operators.
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
@@ -164,22 +172,27 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>, user_funcs: &HashSet
                 gen_funcs.push(node.children[0].data.clone().unwrap());
                 // dat.add_func(node.children[0].data.clone().unwrap());
 
-                let mut bcode = _get_bytecode(node.children[1..].to_vec(), user_funcs, stdlib);
-                code.append(&mut bcode);
+                // println!("first child of defun: {:?}", node.children[2]);
 
                 if node.children.len() > 2 {
+                    let mut bcode = _get_bytecode(node.children[2..].to_vec(), user_funcs, stdlib);
+                    code.append(&mut bcode);
+
                     code.push(Bytecode::MakeFunc(node.children[1].children.len() + 1));
 
-                    // code.push(Bytecode::StoreName(node.children[1].data.clone().unwrap()));
+                    code.push(Bytecode::StoreName(node.children[1].data.clone().unwrap())); // first parameter
+                    // println!("node.children[1].data:  {:?}", node.children[1].data);
 
-                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap()));
-
-                    for child in &node.children[1].children {
+                    for child in &node.children[1].children {  // the rest of the params.
                         code.push(Bytecode::StoreName(child.data.clone().unwrap()));
                     }
 
+                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap())); // function
                 }
                 else {
+                    let mut bcode = _get_bytecode(node.children[1..].to_vec(), user_funcs, stdlib);
+                    code.append(&mut bcode);
+                    
                     code.push(Bytecode::MakeFunc(0));
                     code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap()));
 
@@ -219,17 +232,17 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>, user_funcs: &HashSet
                 // }
                 //println!("name: {}, {}", name, stdlib.contains_key(name));
                 if user_funcs.contains(name){
-                    code.push(Bytecode::LoadFunc(name));
+                    code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
                     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                     code.append(&mut bcode);
                     code.push(Bytecode::CallFunc(node.children.len()));
                 }
                 else if stdlib.contains_key(name)  {
                     let nargs = node.children.len();
-                    match stdlib.get(name) {
-                        Some(Nargs::Num(num)) => {
-                            if nargs == num - 1 {
-                                code.push(Bytecode::LoadFunc(name));
+                    match stdlib.get(name).unwrap().0 {
+                        Nargs::Num(num) => {
+                            if nargs == num {
+                                code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
                                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                                 code.append(&mut bcode);
                                 code.push(Bytecode::CallFunc(node.children.len()));
@@ -239,15 +252,15 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>, user_funcs: &HashSet
                             }
                         }
 
-                        Some(Nargs::INF) => {
-                            code.push(Bytecode::LoadFunc(name));
+                        Nargs::INF => {
+                            code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
                             let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                             code.append(&mut bcode);
                             code.push(Bytecode::CallFunc(node.children.len()));
                         }
 
                         _ => {
-                            code.push(Bytecode::LoadFunc(name));
+                            code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
                             let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                             code.append(&mut bcode);
                             code.push(Bytecode::CallFunc(node.children.len()));
@@ -257,11 +270,13 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>, user_funcs: &HashSet
                 else {
                     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                     code.append(&mut bcode);
+                    // println!("adding LoadName(\"{}\"), from children: {:?}", name, node.children);
+                    // println!("");
                     code.push(Bytecode::LoadName(lexer::Token::Symbol(name)));
                 }
             }
 
-            Some(lexer::Token::Number(n)) => {
+            Some(lexer::Token::Number(_)) | Some(lexer::Token::Str(_)) => {
                 code.push(Bytecode::Push(node.data.clone().unwrap()));
                 // break;
             }
@@ -313,7 +328,8 @@ fn _get_user_funcs<'input>(parsed: &Vec<parser::Node<'input>>) -> HashSet<&'inpu
 //     return user_funcs;
 // }
 
-pub fn get_bytecode<'input>(parsed: &Vec<parser::Node<'input>>, stdlib: &HashMap<&'input str, Nargs>) -> Vec<Vec<Bytecode<'input>>> { //-> Vec<Statments> {
+pub fn get_bytecode<'input>(parsed: &Vec<parser::Node<'input>>,
+                            stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r> Fn(Vec<Token<'r>>) -> Result<Option<Token<'_>>, &str> + 'input))>) -> Vec<Vec<Bytecode<'input>>> { //-> Vec<Statments> {
     /*
     returns a vector of instructions to execute.
     this is interpreted later.
