@@ -14,9 +14,6 @@ use std::collections::HashMap;
 pub enum Bytecode<'input> {
     //Stack stuff
     Push(lexer::Token<'input>), // pushes a const to the stack
-    Pop,
-    Clr,
-    Block(&'input str),
 
     //Binary math
     BinAdd,
@@ -38,7 +35,6 @@ pub enum Bytecode<'input> {
     //Names
     StoreName(lexer::Token<'input>),
     LoadName(lexer::Token<'input>),
-    DropName,
 
     //Functions
     CallFunc(usize),
@@ -206,17 +202,21 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
 
             Some(lexer::Token::Symbol("if")) => {
                 // code.push(Bytecode::Block("CONDITION_BLOCK")); // uncomment if conditional are broken
-                let mut bcode = _get_bytecode(vec![node.children[0].clone()], user_funcs, stdlib);
-                code.append(&mut bcode); // the condition form
-                code.push(Bytecode::JumpIfTrue(bcode.len() + 2));
+                let mut cond_bcode = _get_bytecode(vec![node.children[0].clone()], user_funcs, stdlib);
+                // let distance = bcode.len();
+                // println!("if block bytecode {:?}", bcode);
 
                 let mut bcode = _get_bytecode(vec![node.children[1].clone()], user_funcs, stdlib);
+                let distance = bcode.len();
+                code.append(&mut cond_bcode); // the condition form
+                code.push(Bytecode::JumpIfTrue(distance + 1));
                 code.append(&mut bcode); // the if block
+
                 // code.push(Bytecode::Jump("END_IF"));
                 // code.push(Bytecode::Block("ELSE_BLOCK"));
 
                 let mut bcode = _get_bytecode(vec![node.children[2].clone()], user_funcs, stdlib);
-                code.push(Bytecode::Jump(bcode.len() + 2));
+                code.push(Bytecode::Jump(bcode.len()));
                 code.append(&mut bcode); // the else block
                 // code.push(Bytecode::Block("END_IF"));
             }
@@ -285,12 +285,12 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                             code.push(Bytecode::CallFunc(node.children.len()));
                         }
 
-                        _ => {
-                            code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
-                            let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
-                            code.append(&mut bcode);
-                            code.push(Bytecode::CallFunc(node.children.len()));
-                        }
+                        // _ => {
+                        //     code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
+                        //     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
+                        //     code.append(&mut bcode);
+                        //     code.push(Bytecode::CallFunc(node.children.len()));
+                        // }
                     }
                 }
                 else {
@@ -302,7 +302,9 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                 }
             }
 
-            Some(lexer::Token::Number(_)) | Some(lexer::Token::Str(_)) => {
+            Some(lexer::Token::Number(_)) |
+            Some(lexer::Token::Bool(_)) |
+            Some(lexer::Token::Str(_)) => {
                 code.push(Bytecode::Push(node.data.clone().unwrap()));
                 // break;
             }

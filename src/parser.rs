@@ -3,7 +3,6 @@
 */
 
 use crate::lexer;
-use crate::lexer::Token;
 // use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -46,11 +45,6 @@ impl<'arb> Node<'arb> {
         return self;
     }
 
-    pub fn del_child(mut self) -> Node<'arb> {
-        self.children = Vec::new();
-        return self;
-    }
-
     pub fn set_parent(mut self, pid: NodeID) -> Node<'arb> {
         self.parent_id = Some(pid);
         return self;
@@ -89,14 +83,12 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
      */
     let mut block = Vec::new();
     let mut created_ids = Vec::new();
-    let mut u_id = uid;
-    let tt = token.clone();
+    let mut u_id;
     let mut tok = token;
     let mut next_tok;
     let mut nt_cp;
     let mut lp = 0;
     let mut rp = 0;
-    let mut sym_seen = false;
     // println!("called on: {:?}", tok);
 
     loop {
@@ -104,7 +96,6 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: us
         u_id = lex.pos;
         nt_cp = next_tok.clone();
         let id = NodeID::new(u_id);
-        let cp_id = id.clone();
         let mut node = Node::new(id).set_parent(NodeID::new(pid));
 
         // println!("{:?}, {:?}", tok, nt_cp);

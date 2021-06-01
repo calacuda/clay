@@ -78,7 +78,6 @@ I mean much, better at dealing with large numbers.
                                   computed. one can work around the lack of
                                   return statements through conditionals and
                                   variables)
-* add boolean detection capabilities to the lexer.
 * make the rust part of the standard lib able to return values.
 * add unsigned numbers in the background to make math more accurate.
 * clean up the code (delete unneeded commented lines, fix cargo warnings, etc).

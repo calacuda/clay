@@ -10,19 +10,11 @@ use crate::bcc::{
 use std::collections::HashSet;
 use std::collections::HashMap;
 
-type func = fn(Vec<Token>) -> Option<()>;
+// type func = fn(Vec<Token>) -> Option<()>;
 
 // the deffinitions of all standard library functions go here.
 pub fn write_line<'input>(lines: &mut Vec<Token>) { //-> Result<Option<Token<'input>>, &'input str> {
-    for _ in 0..lines.len() {
-        let line = lines.pop().unwrap();
-        match line {
-            Token::Symbol(output) => print!("{}", output),
-            Token::Number(output) => print!("{}", output),
-            Token::Str(output) => print!("{}", output),
-            _ => {} //return Err("ERROR: on write_line. you can't print that."),
-        }
-    }
+    write(lines);
     println!();
     // return Ok(None);
 }
@@ -36,6 +28,7 @@ pub fn write(lines: &mut Vec<Token>) {
             Token::Symbol(output) => print!("{}", output),
             Token::Number(output) => print!("{}", output),
             Token::Str(output) => print!("{}", output),
+            Token::Bool(truth) => print!("{}", match truth {true => "t", false => "nil"}),
             _ => {} //return Err("ERROR: on write_line. you can't print that."),
         }
     }

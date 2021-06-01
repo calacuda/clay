@@ -39,7 +39,7 @@ impl<'input> Lexer<'input> {
                 tok_buf: None}
     }
 
-    pub fn unread(&mut self, tok: Token<'input>) {
+    pub fn _unread(&mut self, tok: Token<'input>) {
         match self.tok_buf {
             Some(_) => panic!("error: unread buffer full"),
             None => self.tok_buf = Some(tok),
@@ -98,6 +98,11 @@ impl<'input> Lexer<'input> {
                         start += 1;
                         end -= 1;
                         return Token::Str(&self.s[start..end]);
+                    }
+                    if &self.s[start..end] == "nil" {
+                        return Token::Bool(false)
+                    } else if &self.s[start..end] == "t" {
+                        return Token::Bool(true)
                     }
                     return Token::Symbol(&self.s[start..end]);
                 }

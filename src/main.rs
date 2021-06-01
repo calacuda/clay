@@ -22,7 +22,7 @@ fn read_source(fname: &str) -> String {
 
 }
 
-fn test_parser(parserd_sc: &Vec<parser::Node>) {
+fn _test_parser(parserd_sc: &Vec<parser::Node>) {
     println!("Parsed Source Code:\n");
     for child in parserd_sc.iter() {
         println!("===========================");
@@ -43,7 +43,7 @@ fn test_parser(parserd_sc: &Vec<parser::Node>) {
     }
 }
 
-fn test_parser2(node: &parser::Node) {
+fn _test_parser2(node: &parser::Node) {
     println!("Parsed Source Code:\n");
 
     println!("===========================");
@@ -63,7 +63,7 @@ fn test_parser2(node: &parser::Node) {
     println!("\n");
 }
 
-fn test_parser3(nodes: &Vec<parser::Node>) {
+fn _test_parser3(nodes: &Vec<parser::Node>) {
     println!("Parsed Source Code:\n");
     for node in nodes {
         println!("===========================");
@@ -107,12 +107,6 @@ fn test_lexer(lex: &mut lexer::Lexer) {
     }
 }
 
-// fn parse_args(args: Vec<String>) -> (String, String) {
-//     for args in args {
-//
-//     }
-// }
-
 fn run(sc_name: String, test_mode: bool) {
     let scf = read_source(&sc_name);
 
@@ -126,13 +120,9 @@ fn run(sc_name: String, test_mode: bool) {
     let stdlib = std_lib::get_std_funcs();  //
 
     if test_mode {
-        test_parser(&parsed);
-        test_parser2(&parsed[0]);
-        test_parser2(&parsed[0].children[0]);
-        test_parser2(&parsed[0].children[1]);
-        test_parser2(&parsed[0].children[2]);
-        test_parser3(&parsed);
-        println!("bcc output:\n{:?}", bcc::get_bytecode(&parsed, &stdlib));
+        // _test_parser(&parsed);
+        // _test_parser2(&parsed[0]);
+        _test_parser3(&parsed);
         println!();
     }
     let bytecode = bcc::get_bytecode(&parsed, &stdlib); //

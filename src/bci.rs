@@ -1,12 +1,9 @@
 //bytecode interpreter
 
 use crate::bcc::{Bytecode, Nargs};
-use crate::parser;
 use crate::lexer;
 use crate::lexer::Token;
-use crate::std_lib;
 use std::collections::HashMap;
-use std::collections::HashSet;
 
 // fn function(params: Vec<Token>, body_code: Vec<Token>, enviornment: HashMap<Token, Token>) {
 //
@@ -17,7 +14,6 @@ pub enum StackData<'input> {
     Func(Function<'input>),
     StdFunc(Token<'input>),
     Tok(Token<'input>),
-    Block(&'input str),
 }
 
 #[derive(Debug, Clone)]
@@ -52,37 +48,14 @@ impl<'foobar> Function<'foobar> {
         self.params.push(param);
     }
 
-    fn set_code(&mut self, tok: &mut Vec<Bytecode<'foobar>>) {
-        self.code.append(tok);
-    }
-
     fn add_code(&mut self, tok: Bytecode<'foobar>) {
-        // -> Function<'foobar> {
         self.code.push(tok);
-        // return self;
     }
 
     // fn set_tok(&mut self, tok: lexer::Token<'foobar>) {
     //     self.tok = Some(tok);
     // }
 }
-
-// fn get_two_num<'input>(stack: &mut Vec<StackData<'input>>) -> (String, String) {
-//     let mut nums = Vec::new();
-//     for _ in 0..stack.len() {
-//         let tok = stack.pop().unwrap();
-//         match tok {
-//             StackData::Tok(Token::Number(num)) => {
-//                 nums.push(num);
-//                 if nums.len() > 2 {
-//                     break;
-//                 }
-//             },
-//             _ => {}
-//         }
-//     }
-//     return (nums[0].clone(), nums[1].clone());
-// }
 
 fn get_params<'input>(
     nargs: usize,
@@ -119,8 +92,6 @@ fn get_params<'input>(
                 // println!("adding \"{:?}\" to the params list.", tok);
                 params.push(tok);
             }
-
-            Some(StackData::Block(_)) => {}
 
             None => {
                 panic!("place holder text")
@@ -462,19 +433,20 @@ fn do_the_thing<'input>(
             Some(Bytecode::BinGrtr) => bin_num_comp(stack, '>'),
             Some(Bytecode::JumpIfTrue(distance)) => match stack.pop().unwrap() {
                 StackData::Tok(lexer::Token::Bool(false)) => {
+                    // println!("jumping if");
                     for _ in 0..distance.clone() {
                         loc_thing.next();
                     }
                 }
-                StackData::Tok(lexer::Token::Bool(true)) => {}
+                StackData::Tok(lexer::Token::Bool(true)) => {}, // println!("not jumping if");}
                 _ => panic!("no bool found after if statement"),
             },
             Some(Bytecode::Jump(distance)) => {
+                // println!("jumping");
                 for _ in 0..distance.clone() {
                     loc_thing.next();
                 }
             }
-            Some(Bytecode::Block(block)) => stack.push(StackData::Block(block)),
             Some(_) => panic!("bytecode \"{:?}\" not known", code),
             None => break,
         }
