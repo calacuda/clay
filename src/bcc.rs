@@ -3,10 +3,8 @@ takes the parsed code outputs bytecode.
 */
 
 use crate::parser;
-use crate::parser::{
-    lexer,
-    lexer::Token,
-};
+use crate::lexer;
+use crate::lexer::Token;
 // use crate::std_lib;
 
 use std::collections::HashSet;
@@ -221,6 +219,33 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                 code.push(Bytecode::Jump(bcode.len() + 2));
                 code.append(&mut bcode); // the else block
                 // code.push(Bytecode::Block("END_IF"));
+            }
+
+            Some(lexer::Token::Symbol("let")) => {
+                // let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
+                // // code.append(&mut bcode);
+                // println!("\nlet begin:");
+                // for code in bcode {
+                //     println!("bcode code: {:?}", code);
+                // }
+                // println!(":let end\n");
+                for child in node.children.clone() {
+                    if child.children.len() < 1 {
+                        match child.data {
+                            Some(lexer::Token::Symbol(var_name)) => panic!("ERROR: variable \"{}\" needs a value", var_name),
+                            Some(lexer::Token::EOF) => panic!("ERROR: unexpected EOF"),
+                            Some(lexer::Token::LParen |
+                                 lexer::Token::RParen) => panic!("ERROR: unexpected parenthesis"),
+                            Some(lexer::Token::Str(_) |
+                                 lexer::Token::Bool(_) |
+                                 lexer::Token::Number(_)) =>  panic!("ERROR: can't use data as a variable name"),
+                            None => panic!("can't read variable name"),
+                        }
+                    }
+                    let mut bcode = _get_bytecode(child.children.clone(), user_funcs, stdlib);
+                    code.append(&mut bcode);
+                    code.push(Bytecode::StoreName(child.data.unwrap()));
+                }
             }
 
             Some(lexer::Token::Symbol(name)) => {

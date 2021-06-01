@@ -2,7 +2,8 @@
     parses the token list prodused by the lexer and ouputs and outputs an ast.
 */
 
-pub mod lexer;
+use crate::lexer;
+// use crate::lexer::Token;
 // use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -14,7 +15,7 @@ pub struct Node<'arb> {
     // pub bytecode: Vec<Bytecode<'arb>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub struct NodeID {
     pub index: usize,
 }

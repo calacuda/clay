@@ -6,5 +6,5 @@
     )
   )
 
-(write (fact 5))
+(write (fact 65))
 (terpri)

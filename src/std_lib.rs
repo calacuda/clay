@@ -1,8 +1,6 @@
 use crate::parser;
-use crate::parser::{
-    lexer,
-    lexer::Token
-};
+use crate::lexer;
+use crate::lexer::Token;
 use crate::bcc;
 use crate::bcc::{
     Bytecode,

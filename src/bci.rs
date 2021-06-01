@@ -1,17 +1,12 @@
 //bytecode interpreter
 
+use crate::bcc::{Bytecode, Nargs};
 use crate::parser;
-use crate::parser::{
-    lexer,
-    lexer::Token
-};
+use crate::lexer;
+use crate::lexer::Token;
 use crate::std_lib;
-use crate::bcc::{
-    Bytecode,
-    Nargs,
-};
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 // fn function(params: Vec<Token>, body_code: Vec<Token>, enviornment: HashMap<Token, Token>) {
 //
@@ -61,7 +56,8 @@ impl<'foobar> Function<'foobar> {
         self.code.append(tok);
     }
 
-    fn add_code(&mut self, tok: Bytecode<'foobar>) {  // -> Function<'foobar> {
+    fn add_code(&mut self, tok: Bytecode<'foobar>) {
+        // -> Function<'foobar> {
         self.code.push(tok);
         // return self;
     }
@@ -88,11 +84,12 @@ impl<'foobar> Function<'foobar> {
 //     return (nums[0].clone(), nums[1].clone());
 // }
 
-fn get_params<'input>(nargs: usize,
-                      stack: &mut Vec<StackData<'input>>,
-                      user_names: &mut HashMap<&str, StackData<'input>>,
-                      stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>)
-              -> (&'input str, Vec<Token<'input>>) {
+fn get_params<'input>(
+    nargs: usize,
+    stack: &mut Vec<StackData<'input>>,
+    user_names: &mut HashMap<&str, StackData<'input>>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+) -> (&'input str, Vec<Token<'input>>) {
     let mut params = Vec::new();
     let mut fname = "DEFAULT";
     // println!("get_params stack: {:?}", stack);
@@ -135,8 +132,10 @@ fn get_params<'input>(nargs: usize,
     return (fname, params);
 }
 
-fn make_args<'input>(args: Vec<Token<'input>>,
-                     params: &Vec<Token<'input>>) -> HashMap<&'input str, StackData<'input>> {
+fn make_args<'input>(
+    args: Vec<Token<'input>>,
+    params: &Vec<Token<'input>>,
+) -> HashMap<&'input str, StackData<'input>> {
     // println!("make_args args: {:?}", args);
     // println!("make_args params: {:?}", params);
     assert_eq!(args.len(), params.len());
@@ -145,7 +144,9 @@ fn make_args<'input>(args: Vec<Token<'input>>,
     for i in [0..args.len()] {
         let i_2 = i.clone();
         let param_name = match params[i].to_vec()[0] {
-            lexer::Token::Symbol(sym) => enviornment.insert(sym, StackData::Tok(args[i_2].to_vec()[0].clone())),
+            lexer::Token::Symbol(sym) => {
+                enviornment.insert(sym, StackData::Tok(args[i_2].to_vec()[0].clone()))
+            }
             // [lexer::Token::Number(num)] => &num.to_string(),
             _ => panic!("call the weewoo wagon."),
         };
@@ -160,11 +161,13 @@ fn make_args<'input>(args: Vec<Token<'input>>,
     return enviornment;
 }
 
-fn call_func<'input>(nargs: usize,
-                     stack: &mut Vec<StackData<'input>>,
-                     envrnmt: &HashMap<&'input str, StackData<'input>>,
-                     user_names: &mut HashMap<&'input str, StackData<'input>>,
-                     stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) {
+fn call_func<'input>(
+    nargs: usize,
+    stack: &mut Vec<StackData<'input>>,
+    envrnmt: &HashMap<&'input str, StackData<'input>>,
+    user_names: &mut HashMap<&'input str, StackData<'input>>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+) {
     // println!("envrnmt: {:?}", envrnmt);
     let (func_name, mut params) = get_params(nargs, stack, user_names, stdlib);
     // println!("call_func stack: {:?}", stack);
@@ -178,7 +181,7 @@ fn call_func<'input>(nargs: usize,
         // println!("f {}", f);
         let func_details = stdlib.get(func_name);
         match func_details.unwrap().0 {
-            Nargs::INF => { }
+            Nargs::INF => {}
             Nargs::Num(num) => {
                 if num != nargs {
                     panic!("wrong number of args");
@@ -187,8 +190,7 @@ fn call_func<'input>(nargs: usize,
         }
         // println!("calling function {:?}", func_name);
         func_details.unwrap().1(&mut params);
-    }
-    else if working_user_name.contains_key(func_name) {
+    } else if working_user_name.contains_key(func_name) {
         // println!("calling function: {:?}", func_name);
         let func_details = working_user_name.get(func_name).unwrap();
         let func;
@@ -212,21 +214,19 @@ fn call_func<'input>(nargs: usize,
             }
         }
 
-
         // let env = make_args(params, func.params);
         // println!("func_details: {:?}", func_details);
-
     }
 }
 
 fn bin_add<'input>(stack: &mut Vec<StackData<'input>>) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only add numbers")
+        _ => panic!("you can only add numbers"),
     };
-    let s2 = match stack.pop().unwrap(){
+    let s2 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only add numbers")
+        _ => panic!("you can only add numbers"),
     };
 
     let sum;
@@ -236,8 +236,7 @@ fn bin_add<'input>(stack: &mut Vec<StackData<'input>>) {
         let n2: f64 = s2.parse().unwrap();
         let tmp_sum = n2 + n1;
         sum = tmp_sum.to_string();
-    }
-    else {
+    } else {
         let n1: i64 = s1.parse().unwrap();
         let n2: i64 = s2.parse().unwrap();
         let tmp_sum = n2 + n1;
@@ -249,11 +248,11 @@ fn bin_add<'input>(stack: &mut Vec<StackData<'input>>) {
 fn bin_sub<'input>(stack: &mut Vec<StackData<'input>>) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only subtract numbers")
+        _ => panic!("you can only subtract numbers"),
     };
-    let s2 = match stack.pop().unwrap(){
+    let s2 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only subtract numbers")
+        _ => panic!("you can only subtract numbers"),
     };
 
     let sum;
@@ -263,8 +262,7 @@ fn bin_sub<'input>(stack: &mut Vec<StackData<'input>>) {
         let n2: f64 = s2.parse().unwrap();
         let tmp_sum = n2 - n1;
         sum = tmp_sum.to_string();
-    }
-    else {
+    } else {
         let n1: i64 = s1.parse().unwrap();
         let n2: i64 = s2.parse().unwrap();
         let tmp_sum = n2 - n1;
@@ -277,11 +275,11 @@ fn bin_mul<'input>(stack: &mut Vec<StackData<'input>>) {
     // println!("bin_mul stack: {:?}", stack);
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only multiply numbers")
+        _ => panic!("you can only multiply numbers"),
     };
-    let s2 = match stack.pop().unwrap(){
+    let s2 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only multiply numbers")
+        _ => panic!("you can only multiply numbers"),
     };
     // let (s1, s2) = get_two_num(stack);
 
@@ -292,8 +290,7 @@ fn bin_mul<'input>(stack: &mut Vec<StackData<'input>>) {
         let n2: f64 = s2.parse().unwrap();
         let tmp_sum = n2 * n1;
         sum = tmp_sum.to_string();
-    }
-    else {
+    } else {
         let n1: i64 = s1.parse().unwrap();
         let n2: i64 = s2.parse().unwrap();
         let tmp_sum = n2 * n1;
@@ -305,11 +302,11 @@ fn bin_mul<'input>(stack: &mut Vec<StackData<'input>>) {
 fn bin_div<'input>(stack: &mut Vec<StackData<'input>>) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only divide numbers")
+        _ => panic!("you can only divide numbers"),
     };
     let s2 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only divide numbers")
+        _ => panic!("you can only divide numbers"),
     };
 
     let n1: f64 = s1.parse().unwrap();
@@ -319,34 +316,37 @@ fn bin_div<'input>(stack: &mut Vec<StackData<'input>>) {
     stack.push(StackData::Tok(Token::Number(sum)));
 }
 
-fn store_name<'input>(stack: &mut Vec<StackData<'input>>,
+fn store_name<'input>(
+                      stack: &mut Vec<StackData<'input>>,
                       user_names: &mut HashMap<&'input str, StackData<'input>>,
-                      name: Token<'input>)
-                      {
+                      name: &'input str,
+                     ) {
     // for _ in [0..stack.len()] {
     //     let tok = stack.pop().clone().unwrap();
     //     match tok {
     //         _ => println!("tok: {:?}", tok)
     //     }
     // }
-    println!("store_name");
+    // println!("store_name");
     let tmp_var = stack.pop().unwrap();
-    match tmp_var {
-        // StackData::Tok(Token::Symbol(name)) => {user_names.insert(k, v)}
-        // StackData::Tok(_) => {panic!("idk what that is, but its not a function name.")},
-        // StackData::Func(_) => {panic!("found Function, not a function name.")}
-        _ => println!("tmp_var: {:?}", tmp_var)
-    }
+    // match tmp_var {
+    //     StackData::Tok(Token::Symbol(name)) => {user_names.insert(name, tmp_var);},
+    //     StackData::Tok(_) => panic!("idk what that is, but its not a function name."),
+    //     StackData::Func(_) => panic!("found Function, not a function name."),
+    //     _ => println!("tmp_var: {:?}", tmp_var),
+    // }
+    // match name
+    user_names.insert(name, tmp_var);
 }
 
 fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only compare numbers")
+        _ => panic!("you can only compare numbers"),
     };
-    let s2 = match stack.pop().unwrap(){
+    let s2 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
-        _ => panic!("you can only compare numbers")
+        _ => panic!("you can only compare numbers"),
     };
 
     if s1.contains(".") | s2.contains(".") {
@@ -355,29 +355,35 @@ fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
         let answer = match sign {
             '<' => n1 > n2,
             '>' => n1 < n2,
-            _ => panic!("wrong sign provided")
+            _ => panic!("wrong sign provided"),
         };
         stack.push(StackData::Tok(Token::Bool(answer)));
-    }
-    else {
+    } else {
         let n1: i64 = s1.parse().unwrap();
         let n2: i64 = s2.parse().unwrap();
         let answer = match sign {
             '<' => n1 > n2,
             '>' => n1 < n2,
-            _ => panic!("wrong sign provided")
+            _ => panic!("wrong sign provided"),
         };
         stack.push(StackData::Tok(Token::Bool(answer)));
     };
 }
 
-fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
-                        stack: &mut Vec<StackData<'input>>,
-                        envrnmt: &HashMap<&'input str, StackData<'input>>,
-                        user_names: &mut HashMap<&'input str, StackData<'input>>,
-                        stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>)
-                        // -> Option<Token<'input>>
-                        {
+fn do_the_thing<'input>(
+    thing: &Vec<Bytecode<'input>>,
+    stack: &mut Vec<StackData<'input>>,
+    envrnmt: &HashMap<&'input str, StackData<'input>>,
+    user_names: &mut HashMap<&'input str, StackData<'input>>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+)
+// -> Option<Token<'input>>
+{
+    /*
+    the main doer of things, hence the not so clever name, this excecute teh byte code for a single
+    form in the global scope.
+    */
+
     // println!("doing the thing");
     // let interable = thing.clone().peekable();
     // println!("do_the_thing stack: {:?}", stack);
@@ -394,8 +400,7 @@ fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
                     Token::Symbol(func_name) => {
                         if user_names.contains_key(func_name) {
                             stack.push(user_names.get(func_name).unwrap().clone());
-                        }
-                        else if stdlib.contains_key(func_name) {
+                        } else if stdlib.contains_key(func_name) {
                             stack.push(StackData::StdFunc(func_tok.clone()));
                         } else {
                             panic!("\"{}\" is not a defined function", func_name);
@@ -404,7 +409,7 @@ fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
                     }
                     _ => {}
                 }
-            },
+            }
             Some(Bytecode::Push(constant)) => stack.push(StackData::Tok(constant.clone())),
             // Some(Bytecode::LoadName(Token::Symbol(name))) => {
             //     match envrnmt.get(name) {
@@ -415,77 +420,52 @@ fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
             //     };
             // }  // user_names.insert(k, v)
             Some(Bytecode::LoadName(Token::Symbol(name))) => {
+                // println!("loading name: {:?}", name);
                 let value = if envrnmt.contains_key(name) {
                     envrnmt.get(name)
-                }
-                else if user_names.contains_key(name) {
+                } else if user_names.contains_key(name) {
                     user_names.get(name)
-                }
-                else {
+                } else {
                     panic!("I don't of this: \"{}\" you speak of.", name)
                 };
 
                 match value {
                     Some(_) => stack.push(value.unwrap().clone()),
                     None => {
-                        println!("name: {:?}", name);
-                        println!("user_names: {:?}", user_names);
-                        panic!("variable or function not found");
-                    },
+                        // println!("name: {:?}", name);
+                        // println!("user_names: {:?}", user_names);
+                        // panic!("variable or function not found");
+                    }
                 }
-            },
-            Some(Bytecode::StoreName(name)) => store_name(stack, user_names, name.clone()),
-            // Some(Bytecode::StoreName(name)) => store_name(stack, user_names, name.clone()),
+            }
+            Some(Bytecode::StoreName(Token::Symbol(name))) => store_name(stack, user_names, name.clone()),
+            Some(Bytecode::StoreName(Token::LParen | Token::RParen)) => panic!("ERROR: parenthesis are a reserved token."),
+            Some(Bytecode::StoreName(_)) => panic!("ERROR: can't us a data type as a variable name."),
+            // Some(Bytecode::StoreName(Token::EOF)) => panic!("ERROR: parenthesis are a reserved token."),
             // Bytecode::MakeFunc(nargs) => make_func(stack, nargs),
             Some(Bytecode::BinAdd) => bin_add(stack),
             Some(Bytecode::BinSub) => bin_sub(stack),
             Some(Bytecode::BinMul) => bin_mul(stack),
             Some(Bytecode::BinDiv) => bin_div(stack),
-            Some(Bytecode::CallFunc(num)) => call_func(num.clone(), stack, envrnmt, user_names, stdlib),
+            Some(Bytecode::CallFunc(num)) => {
+                call_func(num.clone(), stack, envrnmt, user_names, stdlib)
+            }
             Some(Bytecode::BinLess) => bin_num_comp(stack, '<'),
             Some(Bytecode::BinGrtr) => bin_num_comp(stack, '>'),
-            Some(Bytecode::JumpIfTrue(distance)) => {
-                // // let next = loc_thing.next();
-                // match stack.pop().unwrap() {
-                //     StackData::Tok(lexer::Token::Bool(false)) => {
-                //         while match loc_thing.next() {
-                //             Some(Bytecode::Block(block_name)) => {
-                //                 if block_name == target {
-                //                     loc_thing.next();
-                //                     false
-                //                 } else {
-                //                     true
-                //                 }
-                //             }
-                //             _ => true,
-                //         } {}
-                //     }
-                //     StackData::Tok(lexer::Token::Bool(true)) => {},
-                //     _ => panic!("no bool found after if statement"),
-                // }
-                match stack.pop().unwrap() {
-                    StackData::Tok(lexer::Token::Bool(false)) => {
-                        for _ in 0..distance.clone() {loc_thing.next();}
+            Some(Bytecode::JumpIfTrue(distance)) => match stack.pop().unwrap() {
+                StackData::Tok(lexer::Token::Bool(false)) => {
+                    for _ in 0..distance.clone() {
+                        loc_thing.next();
                     }
-                    StackData::Tok(lexer::Token::Bool(true)) => {},
-                    _ => panic!("no bool found after if statement"),
+                }
+                StackData::Tok(lexer::Token::Bool(true)) => {}
+                _ => panic!("no bool found after if statement"),
+            },
+            Some(Bytecode::Jump(distance)) => {
+                for _ in 0..distance.clone() {
+                    loc_thing.next();
                 }
             }
-            Some(Bytecode::Jump(distance)) => {
-                // while match loc_thing.next() {
-                //     Some(Bytecode::Block(block_name)) => {
-                //         if block_name == target {
-                //             loc_thing.next();
-                //             false
-                //         } else {
-                //             true
-                //         }
-                //     }
-                //     _ => true,
-                // } {}
-                for _ in 0..distance.clone() {loc_thing.next();}
-            }
-            // Some(Bytecode::Block("END_IF")) => {},
             Some(Bytecode::Block(block)) => stack.push(StackData::Block(block)),
             Some(_) => panic!("bytecode \"{:?}\" not known", code),
             None => break,
@@ -495,30 +475,39 @@ fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
     }
 }
 
-fn function_com<'input>(thing: &Vec<Bytecode<'input>>,
-                        stack: &mut Vec<StackData<'input>>,
-                        envrnmt: &HashMap<&'input str, StackData<'input>>,
-                        user_names: &mut HashMap<&'input str, StackData<'input>>,
-                        stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>)
-                        {
+fn function_com<'input>(
+    thing: &mut Vec<Bytecode<'input>>,
+    stack: &mut Vec<StackData<'input>>,
+    envrnmt: &HashMap<&'input str, StackData<'input>>,
+    user_names: &mut HashMap<&'input str, StackData<'input>>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+) {
+    /*
+    function "compiler":
+
+    this function builds up the bytecode for a function.
+    */
     let mut f = Function::new();
     // println!("thing: {:?}", thing);
+    match thing.pop() {
+        Some(Bytecode::StoreName(Token::Symbol(name))) => f.set_name(name),
+        _ => panic!("defun needs a function name."),
+    }
     match thing.last().unwrap() {
-        Bytecode::StoreName(Token::Symbol(name)) => f.set_name(name),
-        _ => panic!("defun needs a function name.")
+        Bytecode::MakeFunc(_) => {thing.pop();}
+        _ => {
+            thing.push(Bytecode::StoreName(Token::Symbol(f.name)));
+            // asign_globals(thing, f.name, stack, envrnmt, user_names, std_lib);
+            do_the_thing(thing, stack, envrnmt, user_names, stdlib);
+            return;
+        }
     }
     // println!("thing: {:?}", thing);
     let mut nargs = 0;
-    let mut tmp_stack: Vec<StackData>= Vec::new();
-    for code in thing {
-        match code.clone() {
-            Bytecode::MakeFunc(_) => {},
-            Bytecode::Push(constant) => {
-                f.add_code(Bytecode::Push(constant.clone()));
-                tmp_stack.push(StackData::Tok(constant));
-            },
-            Bytecode::LoadName(tok) => f.add_code(Bytecode::LoadName(tok)),  // user_names.insert(k, v)
-            Bytecode::StoreName(Token::Symbol(name)) => {
+    loop {
+        let code = thing.pop();
+        match code {
+            Some(Bytecode::StoreName(Token::Symbol(name))) => {
                 // println!("name: {:?}", name);
                 if name != f.name {
                     f.add_param(lexer::Token::Symbol(name));
@@ -526,8 +515,22 @@ fn function_com<'input>(thing: &Vec<Bytecode<'input>>,
                     nargs += 1;
                 }
             }
+            _ => {
+                thing.push(code.unwrap());
+                break;
+            }
+        }
+        // println!("code: {:?}", code);
+    }
+    // let mut tmp_stack: Vec<StackData> = Vec::new();
+    for code in thing {
+        // println!("code: {:?}", code);
+        match code.clone() {
+            Bytecode::MakeFunc(_) => {
+                // println!("function def inside function")
+                panic!("ERROR: you can't declare functions inside other functions.")
+            }
             bc => f.add_code(bc),
-            _ => panic!("bytecode \"{:?}\" not known", code),
         }
         // println!("stack: {:?}", stack);
     }
@@ -535,16 +538,25 @@ fn function_com<'input>(thing: &Vec<Bytecode<'input>>,
     user_names.insert(f.name, StackData::Func(f));
 }
 
-pub fn do_the_things<'input>(things: Vec<Vec<Bytecode<'input>>>,
-                             stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) {
+pub fn do_the_things<'input>(
+    things: Vec<Vec<Bytecode<'input>>>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+) {
+    /*
+    do the things:
+
+    the entry point for the byte code interpreter. run this function to interpret bytecode.
+    */
     let mut stack: Vec<StackData> = Vec::new();
     let mut user_names: HashMap<&'input str, StackData> = HashMap::new();
-    let mut envrnmt: HashMap<&'input str, StackData> = HashMap::new();
+    let envrnmt: HashMap<&'input str, StackData> = HashMap::new();
 
     for g_block in things {
         // println!("g_block[0]: {:?}", g_block[0]);
         match g_block.last().unwrap() {
-            Bytecode::StoreName(_) => function_com(&g_block, &mut stack, &envrnmt, &mut user_names, stdlib),
+            Bytecode::StoreName(_) => {
+                function_com(&mut g_block.clone(), &mut stack, &envrnmt, &mut user_names, stdlib)
+            }
             _ => do_the_thing(&g_block, &mut stack, &envrnmt, &mut user_names, stdlib),
         }
         // println!("user_funcs: {:?}", user_names.keys());
