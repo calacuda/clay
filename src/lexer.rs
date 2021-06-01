@@ -110,6 +110,12 @@ impl<'input> Lexer<'input> {
                             self.line_num += 1;
                             continue;
                         },
+                        '\t' => {
+                            iter.next();
+                            self.pos += 1;
+                            self.col += 1;
+                            continue;
+                        },
                         ';' => {
                             iter.next();
                             self.pos += 1;

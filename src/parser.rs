@@ -3,7 +3,7 @@
 */
 
 use crate::lexer;
-// use crate::lexer::Token;
+use crate::lexer::Token;
 // use std::collections::HashMap;
 
 #[derive(Debug, Clone)]

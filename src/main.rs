@@ -107,28 +107,67 @@ fn test_lexer(lex: &mut lexer::Lexer) {
     }
 }
 
+// fn parse_args(args: Vec<String>) -> (String, String) {
+//     for args in args {
+//
+//     }
+// }
+
+fn run(sc_name: String, test_mode: bool) {
+    let scf = read_source(&sc_name);
+
+    if test_mode {
+        let mut lex = lexer::Lexer::new(&scf);
+        test_lexer(&mut lex);
+        println!();
+    }
+
+    let parsed = parser::parse(&scf);  //
+    let stdlib = std_lib::get_std_funcs();  //
+
+    if test_mode {
+        test_parser(&parsed);
+        test_parser2(&parsed[0]);
+        test_parser2(&parsed[0].children[0]);
+        test_parser2(&parsed[0].children[1]);
+        test_parser2(&parsed[0].children[2]);
+        test_parser3(&parsed);
+        println!("bcc output:\n{:?}", bcc::get_bytecode(&parsed, &stdlib));
+        println!();
+    }
+    let bytecode = bcc::get_bytecode(&parsed, &stdlib); //
+    if test_mode {
+        println!("{} bytecode:\n", scf);
+        pp_bytecode(&bytecode);
+        println!();
+        println!(" program out put bellow: ");
+        println!("=========================");
+    }
+    bci::do_the_things(bytecode, &stdlib); //
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let scf = args[1].clone();
-    let sc = read_source(&scf);
-    // let mut lex = lexer::Lexer::new(&sc);
-
-    // test_lexer(&mut lex);
-    // println!();
-
-    let parsed = parser::parse(&sc);
-    let stdlib = std_lib::get_std_funcs();
-    // test_parser(&parsed);
-    // test_parser2(&parsed[0]);
-    // test_parser2(&parsed[0].children[0]);
-    // test_parser2(&parsed[0].children[1]);
-    // test_parser2(&parsed[0].children[2]);
-    // test_parser3(&parsed);
-    // println!("bcc output:\n{:?}", bcc::get_bytecode(&parsed, &stdlib));
-    // println!();
-    let bytecode = bcc::get_bytecode(&parsed, &stdlib);
-    // println!("{} bytecode:\n", scf);
-    // pp_bytecode(&bytecode);
-    // println!();
-    bci::do_the_things(bytecode, &stdlib);
+    let args = args[1..].to_vec();
+    // let mut test = false;
+    // if args[1] == "--test" {
+    //     run_test(read_source(&args[2].clone()));
+    // }
+    // else {
+    //     let scf = read_source(&args[1]);
+    //     let parsed = parser::parse(&scf);
+    //     let stdlib = std_lib::get_std_funcs();
+    //     let bytecode = bcc::get_bytecode(&parsed, &stdlib);
+    //     bci::do_the_things(bytecode, &stdlib);
+    // }
+    if args.len() > 1 {
+        for arg in args {
+            if arg != "--test" {
+                println!("{}", arg);
+                run(arg, true);
+            }
+        }
+    } else {
+        run(args[0].clone(), false);
+    }
 }

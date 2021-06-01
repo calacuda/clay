@@ -44,6 +44,8 @@ to run with clay:
 ```
 $ clay test.lisp
 ```
+if you need/want to look at the lexer, parser, and bytecode compiler output, run
+using "--test".
 
 
 ## benchmarks:
