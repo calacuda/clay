@@ -1,2 +1,3 @@
-(write-line "hello world")
+(write "hello world!")
 (terpri)
+(write-line "now in Technicolor!")

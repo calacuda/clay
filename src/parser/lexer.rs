@@ -3,12 +3,14 @@
 //
 // this file has a few modifications made by me.
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Token<'input> {
     LParen,
     RParen,
     Symbol(&'input str),
-    Number(f64),
+    Str(&'input str),
+    Number(String),
+    Bool(bool),
     EOF,
 }
 
@@ -64,13 +66,17 @@ impl<'input> Lexer<'input> {
                             None => break,
                         };
                     }
-                    return Token::Number(self.s[start..self.pos].parse().unwrap());
+                    return Token::Number(String::from(&self.s[start..self.pos]));
                 }
                 else if is_valid_in_symbol(c) {
                     let mut s = c;
                     let mut start = self.pos;
                     // print!("{}", s);
-                    while s.is_alphanumeric() || is_valid_in_symbol(s) || if c == '"' { s == ' ' && s != '"'} else {s != ' ' && s == '"'} {
+                    let mut is_string = false;
+                    if c == '"' {
+                        is_string = true;
+                    }
+                    while s.is_alphanumeric() || is_valid_in_symbol(s) || is_string {// if c == '"' { s == ' ' && s != '"'} else {s != ' ' && s == '"'} {
                         iter.next();
                         self.pos += 1;
                         self.col += 1;
@@ -78,12 +84,20 @@ impl<'input> Lexer<'input> {
                             Some(&x) => x,
                             None => break,
                         };
+                        // let mut is_string = true;
+                        if s == '"' {
+                            // is_string = false;
+                            self.pos += 1;
+                            self.col += 1;
+                            break;
+                        }
                         // print!("{}", s);
                     }
                     let mut end = self.pos;
                     if c == '"' {
                         start += 1;
                         end -= 1;
+                        return Token::Str(&self.s[start..end]);
                     }
                     return Token::Symbol(&self.s[start..end]);
                 }

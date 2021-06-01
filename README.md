@@ -9,6 +9,8 @@ interpreter written in rust. Development is tested against SBCL.
 * parser (src/parser.rs) successfully give a syntax tree.
 * bytecode compiler (src/bcc.rs) compiles bytecode well know if it works when
   the bytecode interpreter gets written.
+* bytecode interpreter (src/bci.rs) interprets bytecode correctly, if is however
+  buggy and doesn't work with recursion yet.
 
 ### building clay:
 

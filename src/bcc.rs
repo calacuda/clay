@@ -129,7 +129,7 @@ pub enum Nargs {
 
 fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                          user_funcs: &HashSet<&'input str>,
-                         stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r> Fn(Vec<Token<'r>>) -> Result<Option<Token<'_>>, &str> + 'input))>) -> Vec<Bytecode<'input>> {
+                         stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) -> Vec<Bytecode<'input>> {
     let mut gen_funcs = Vec::new();
     let mut code = Vec::new();
     // println!("\ndat:{:?}", user_funcs);
@@ -178,23 +178,23 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                     let mut bcode = _get_bytecode(node.children[2..].to_vec(), user_funcs, stdlib);
                     code.append(&mut bcode);
 
-                    code.push(Bytecode::MakeFunc(node.children[1].children.len() + 1));
-
                     code.push(Bytecode::StoreName(node.children[1].data.clone().unwrap())); // first parameter
+
                     // println!("node.children[1].data:  {:?}", node.children[1].data);
 
                     for child in &node.children[1].children {  // the rest of the params.
                         code.push(Bytecode::StoreName(child.data.clone().unwrap()));
                     }
+                    code.push(Bytecode::MakeFunc(node.children[1].children.len() + 1)); // makes the function
 
-                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap())); // function
+                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap())); // stores function
                 }
                 else {
                     let mut bcode = _get_bytecode(node.children[1..].to_vec(), user_funcs, stdlib);
                     code.append(&mut bcode);
-                    
-                    code.push(Bytecode::MakeFunc(0));
+
                     code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap()));
+                    code.push(Bytecode::MakeFunc(0));
 
                     // for child in &node.children[0].children {
                     //     code.push(Bytecode::StoreName(child.data.clone().unwrap()));
@@ -329,7 +329,7 @@ fn _get_user_funcs<'input>(parsed: &Vec<parser::Node<'input>>) -> HashSet<&'inpu
 // }
 
 pub fn get_bytecode<'input>(parsed: &Vec<parser::Node<'input>>,
-                            stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r> Fn(Vec<Token<'r>>) -> Result<Option<Token<'_>>, &str> + 'input))>) -> Vec<Vec<Bytecode<'input>>> { //-> Vec<Statments> {
+                            stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) -> Vec<Vec<Bytecode<'input>>> { //-> Vec<Statments> {
     /*
     returns a vector of instructions to execute.
     this is interpreted later.
