@@ -164,7 +164,7 @@ fn make_args<'input>(
 fn call_func<'input>(
     nargs: usize,
     stack: &mut Vec<StackData<'input>>,
-    envrnmt: &HashMap<&'input str, StackData<'input>>,
+    envrnmt: &mut HashMap<&'input str, StackData<'input>>,
     user_names: &mut HashMap<&'input str, StackData<'input>>,
     stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
 ) {
@@ -198,7 +198,7 @@ fn call_func<'input>(
             StackData::Func(f) => {
                 func = f;
                 // println!("call_func params: {:?}", params);
-                let envrnmt = make_args(params, &func.params);
+                let mut envrnmt = make_args(params, &func.params);
                 // println!("call_func envrnmt: {:?}", envrnmt);
                 // let nargs = match f.nargs {
                 //     Nargs::INF => {15},
@@ -206,7 +206,7 @@ fn call_func<'input>(
                 // };
                 // println!("envrnmt: {:?}", envrnmt);
                 // call_func(nargs, stack, &envrnmt, user_names, stdlib);
-                do_the_thing(&f.code, stack, &envrnmt, user_names, stdlib);
+                do_the_thing(&f.code, stack, &mut envrnmt, user_names, stdlib, true);
             }
             _ => {
                 // println!("func_name: \"{}\" was not called", func_name);
@@ -318,7 +318,7 @@ fn bin_div<'input>(stack: &mut Vec<StackData<'input>>) {
 
 fn store_name<'input>(
                       stack: &mut Vec<StackData<'input>>,
-                      user_names: &mut HashMap<&'input str, StackData<'input>>,
+                      name_space: &mut HashMap<&'input str, StackData<'input>>,
                       name: &'input str,
                      ) {
     // for _ in [0..stack.len()] {
@@ -336,7 +336,7 @@ fn store_name<'input>(
     //     _ => println!("tmp_var: {:?}", tmp_var),
     // }
     // match name
-    user_names.insert(name, tmp_var);
+    name_space.insert(name, tmp_var);
 }
 
 fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
@@ -373,9 +373,10 @@ fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
 fn do_the_thing<'input>(
     thing: &Vec<Bytecode<'input>>,
     stack: &mut Vec<StackData<'input>>,
-    envrnmt: &HashMap<&'input str, StackData<'input>>,
+    envrnmt: &mut HashMap<&'input str, StackData<'input>>,
     user_names: &mut HashMap<&'input str, StackData<'input>>,
     stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+    func_mode: bool,
 )
 // -> Option<Token<'input>>
 {
@@ -438,7 +439,14 @@ fn do_the_thing<'input>(
                     }
                 }
             }
-            Some(Bytecode::StoreName(Token::Symbol(name))) => store_name(stack, user_names, name.clone()),
+            Some(Bytecode::StoreName(Token::Symbol(name))) => {
+                if func_mode {
+                    store_name(stack, envrnmt, name.clone());
+                }
+                else {
+                    store_name(stack, user_names, name.clone());
+                }
+            }
             Some(Bytecode::StoreName(Token::LParen | Token::RParen)) => panic!("ERROR: parenthesis are a reserved token."),
             Some(Bytecode::StoreName(_)) => panic!("ERROR: can't us a data type as a variable name."),
             // Some(Bytecode::StoreName(Token::EOF)) => panic!("ERROR: parenthesis are a reserved token."),
@@ -478,7 +486,7 @@ fn do_the_thing<'input>(
 fn function_com<'input>(
     thing: &mut Vec<Bytecode<'input>>,
     stack: &mut Vec<StackData<'input>>,
-    envrnmt: &HashMap<&'input str, StackData<'input>>,
+    envrnmt: &mut HashMap<&'input str, StackData<'input>>,
     user_names: &mut HashMap<&'input str, StackData<'input>>,
     stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
 ) {
@@ -498,7 +506,7 @@ fn function_com<'input>(
         _ => {
             thing.push(Bytecode::StoreName(Token::Symbol(f.name)));
             // asign_globals(thing, f.name, stack, envrnmt, user_names, std_lib);
-            do_the_thing(thing, stack, envrnmt, user_names, stdlib);
+            do_the_thing(thing, stack, envrnmt, user_names, stdlib, true);
             return;
         }
     }
@@ -549,15 +557,15 @@ pub fn do_the_things<'input>(
     */
     let mut stack: Vec<StackData> = Vec::new();
     let mut user_names: HashMap<&'input str, StackData> = HashMap::new();
-    let envrnmt: HashMap<&'input str, StackData> = HashMap::new();
+    let mut envrnmt: HashMap<&'input str, StackData> = HashMap::new();
 
     for g_block in things {
         // println!("g_block[0]: {:?}", g_block[0]);
         match g_block.last().unwrap() {
             Bytecode::StoreName(_) => {
-                function_com(&mut g_block.clone(), &mut stack, &envrnmt, &mut user_names, stdlib)
+                function_com(&mut g_block.clone(), &mut stack, &mut envrnmt, &mut user_names, stdlib)
             }
-            _ => do_the_thing(&g_block, &mut stack, &envrnmt, &mut user_names, stdlib),
+            _ => do_the_thing(&g_block, &mut stack, &mut envrnmt, &mut user_names, stdlib, false),
         }
         // println!("user_funcs: {:?}", user_names.keys());
         // println!("times-two: {:?}", user_names.get("times-two"));

@@ -115,7 +115,7 @@ fn main() {
 
     // test_lexer(&mut lex);
     // println!();
-
+    println!("{}", i64::max());
     let parsed = parser::parse(&sc);
     let stdlib = std_lib::get_std_funcs();
     // test_parser(&parsed);
