@@ -9,6 +9,5 @@
   )
 
 (write-line num " time 2 is: " (times-two num) " ain't that a shock!")
-(write-line product)
 (write-line "but thats irrelevant, I like the movie '" foo " "
             bar " and the Holy Grail.' it was good")
