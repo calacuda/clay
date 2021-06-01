@@ -9,8 +9,7 @@ interpreter written in rust. Development is tested against SBCL.
 * parser (src/parser.rs) successfully give a syntax tree.
 * bytecode compiler (src/bcc.rs) compiles bytecode well know if it works when
   the bytecode interpreter gets written.
-* bytecode interpreter (src/bci.rs) interprets bytecode correctly, if is however
-  buggy and doesn't work with recursion yet.
+* bytecode interpreter (src/bci.rs) interprets bytecode correctly.
 
 ### building clay:
 
@@ -54,8 +53,7 @@ $ clay test.lisp
 
 ### TODO:
 
-* write the bytecode compiler.
-* write the bytecode interpreter.
+* variable assignment.
 * enable saving of byte code to a file.
 * add a token counter to the lexer (keeps track of how many tokens it has found.
   to make dealing with the parser easier.)

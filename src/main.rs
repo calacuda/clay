@@ -59,7 +59,7 @@ fn pp_bytecode<'input>(bytecode: &Vec<Vec<bcc::Bytecode<'input>>>) {
 }
 
 fn main() {
-    let sc = read_source("test.lisp".to_string());
+    let sc = read_source("test5.lisp".to_string());
     let parsed = parser::parse(&sc);
     let stdlib = std_lib::get_std_funcs();
     // test_parser(&parsed);

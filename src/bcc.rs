@@ -48,8 +48,8 @@ pub enum Bytecode<'input> {
     LoadFunc(lexer::Token<'input>),
 
     //fLoW cOnTrOl
-    JumpIfTrue(&'input str),
-    Jump(&'input str), // could be done with "Push True" then "JumpIfTrue" but I too tierd to
+    JumpIfTrue(usize),
+    Jump(usize), // could be done with "Push True" then "JumpIfTrue" but I too tierd to
                        // figure out the mechanics of that.
 }
 
@@ -210,16 +210,17 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                 // code.push(Bytecode::Block("CONDITION_BLOCK")); // uncomment if conditional are broken
                 let mut bcode = _get_bytecode(vec![node.children[0].clone()], user_funcs, stdlib);
                 code.append(&mut bcode); // the condition form
-                code.push(Bytecode::JumpIfTrue("ELSE_BLOCK"));
+                code.push(Bytecode::JumpIfTrue(bcode.len() + 2));
 
                 let mut bcode = _get_bytecode(vec![node.children[1].clone()], user_funcs, stdlib);
                 code.append(&mut bcode); // the if block
-                code.push(Bytecode::Jump("END_IF"));
-                code.push(Bytecode::Block("ELSE_BLOCK"));
+                // code.push(Bytecode::Jump("END_IF"));
+                // code.push(Bytecode::Block("ELSE_BLOCK"));
 
                 let mut bcode = _get_bytecode(vec![node.children[2].clone()], user_funcs, stdlib);
+                code.push(Bytecode::Jump(bcode.len() + 2));
                 code.append(&mut bcode); // the else block
-                code.push(Bytecode::Block("END_IF"));
+                // code.push(Bytecode::Block("END_IF"));
             }
 
             Some(lexer::Token::Symbol(name)) => {

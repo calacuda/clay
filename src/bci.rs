@@ -167,7 +167,7 @@ fn call_func<'input>(nargs: usize,
                      stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) {
     // println!("envrnmt: {:?}", envrnmt);
     let (func_name, mut params) = get_params(nargs, stack, user_names, stdlib);
-    println!("call_func stack: {:?}", stack);
+    // println!("call_func stack: {:?}", stack);
     // println!("call_func func_name: {:?}", func_name);
     // println!("call_func params: {:?}", params);
 
@@ -274,7 +274,7 @@ fn bin_sub<'input>(stack: &mut Vec<StackData<'input>>) {
 }
 
 fn bin_mul<'input>(stack: &mut Vec<StackData<'input>>) {
-    println!("bin_mul stack: {:?}", stack);
+    // println!("bin_mul stack: {:?}", stack);
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
         _ => panic!("you can only multiply numbers")
@@ -386,7 +386,7 @@ fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
     let mut code;
     loop {
         code = loc_thing.next();
-        println!("code: {:?}", code);
+        // println!("code: {:?}", code);
         match code.clone() {
             Some(Bytecode::LoadFunc(func_tok)) => {
                 // println!("func: {:?}", func);
@@ -444,38 +444,46 @@ fn do_the_thing<'input>(thing: &Vec<Bytecode<'input>>,
             Some(Bytecode::CallFunc(num)) => call_func(num.clone(), stack, envrnmt, user_names, stdlib),
             Some(Bytecode::BinLess) => bin_num_comp(stack, '<'),
             Some(Bytecode::BinGrtr) => bin_num_comp(stack, '>'),
-            Some(Bytecode::JumpIfTrue(target)) => {
-                // let next = loc_thing.next();
+            Some(Bytecode::JumpIfTrue(distance)) => {
+                // // let next = loc_thing.next();
+                // match stack.pop().unwrap() {
+                //     StackData::Tok(lexer::Token::Bool(false)) => {
+                //         while match loc_thing.next() {
+                //             Some(Bytecode::Block(block_name)) => {
+                //                 if block_name == target {
+                //                     loc_thing.next();
+                //                     false
+                //                 } else {
+                //                     true
+                //                 }
+                //             }
+                //             _ => true,
+                //         } {}
+                //     }
+                //     StackData::Tok(lexer::Token::Bool(true)) => {},
+                //     _ => panic!("no bool found after if statement"),
+                // }
                 match stack.pop().unwrap() {
                     StackData::Tok(lexer::Token::Bool(false)) => {
-                        while match loc_thing.next() {
-                            Some(Bytecode::Block(block_name)) => {
-                                if block_name == target {
-                                    loc_thing.next();
-                                    false
-                                } else {
-                                    true
-                                }
-                            }
-                            _ => true,
-                        } {}
+                        for _ in 0..distance.clone() {loc_thing.next();}
                     }
                     StackData::Tok(lexer::Token::Bool(true)) => {},
                     _ => panic!("no bool found after if statement"),
                 }
             }
-            Some(Bytecode::Jump(target)) => {
-                while match loc_thing.next() {
-                    Some(Bytecode::Block(block_name)) => {
-                        if block_name == target {
-                            loc_thing.next();
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                    _ => true,
-                } {}
+            Some(Bytecode::Jump(distance)) => {
+                // while match loc_thing.next() {
+                //     Some(Bytecode::Block(block_name)) => {
+                //         if block_name == target {
+                //             loc_thing.next();
+                //             false
+                //         } else {
+                //             true
+                //         }
+                //     }
+                //     _ => true,
+                // } {}
+                for _ in 0..distance.clone() {loc_thing.next();}
             }
             // Some(Bytecode::Block("END_IF")) => {},
             Some(Bytecode::Block(block)) => stack.push(StackData::Block(block)),
