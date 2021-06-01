@@ -34,6 +34,8 @@ Consider this lisp function that calculates factorials recursively.
 (terpri)
 ```
 
+the line that is commented out is commented out because, it will not work in SBCL.
+
 This code is stored in the "test.lisp" file. To run it with sbcl one would type:
 ```
 $ sbcl --script test.lisp
@@ -63,7 +65,7 @@ Benchmark #1: target/release/clay test.lisp
   Range (min … max):     0.5 ms …   9.2 ms    1000 runs
 ```
 
-In other words my implementation is faster then SBCL. However SBCL is much, and 
+In other words my implementation is faster then SBCL. However SBCL is much, and
 I mean much, better at dealing with large numbers.
 
 
