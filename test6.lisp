@@ -4,8 +4,8 @@
 
 (defun times-two (x)
   (let (product (* x 2)))
-  ;(write-line product)
-  product
+  (write-line product)
+  (return 5)
   )
 
 (write-line num " time 2 is: " (times-two num) " ain't that a shock!")

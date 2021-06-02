@@ -73,13 +73,6 @@ I mean much, better at dealing with large numbers.
 
 ### TODO:
 
-* add explicit return statements (currently functions "return" the last variable
-                                  that was mentioned or the last value that
-                                  computed. one can work around the lack of
-                                  return statements through conditionals and
-                                  variables)
-* make the rust part of the standard lib able to return values.
-* add unsigned numbers in the background to make math more accurate.
 * clean up the code (delete unneeded commented lines, fix cargo warnings, etc).
 * enable saving of byte code to a file.
 * add a token counter to the lexer (keeps track of how many tokens it has found.

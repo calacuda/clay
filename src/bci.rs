@@ -61,7 +61,7 @@ fn get_params<'input>(
     nargs: usize,
     stack: &mut Vec<StackData<'input>>,
     user_names: &mut HashMap<&str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
 ) -> (&'input str, Vec<Token<'input>>) {
     let mut params = Vec::new();
     let mut fname = "DEFAULT";
@@ -135,9 +135,9 @@ fn make_args<'input>(
 fn call_func<'input>(
     nargs: usize,
     stack: &mut Vec<StackData<'input>>,
-    envrnmt: &mut HashMap<&'input str, StackData<'input>>,
+    _envrnmt: &mut HashMap<&'input str, StackData>,
     user_names: &mut HashMap<&'input str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
 ) {
     // println!("envrnmt: {:?}", envrnmt);
     let (func_name, mut params) = get_params(nargs, stack, user_names, stdlib);
@@ -160,7 +160,14 @@ fn call_func<'input>(
             }
         }
         // println!("calling function {:?}", func_name);
-        func_details.unwrap().1(&mut params);
+        let return_val = func_details.unwrap().1(params).clone();
+        match return_val.clone() {
+            Ok(Some(tok)) => stack.push(StackData::Tok(tok)),
+            Ok(None) => {},
+            Err(_) => {},
+            // Err(mesg) => panic!(mesg),
+        }
+        return;
     } else if working_user_name.contains_key(func_name) {
         // println!("calling function: {:?}", func_name);
         let func_details = working_user_name.get(func_name).unwrap();
@@ -169,7 +176,7 @@ fn call_func<'input>(
             StackData::Func(f) => {
                 func = f;
                 // println!("call_func params: {:?}", params);
-                let mut envrnmt = make_args(params, &func.params);
+                let mut envrnmt = make_args(params.clone(), &func.params);
                 // println!("call_func envrnmt: {:?}", envrnmt);
                 // let nargs = match f.nargs {
                 //     Nargs::INF => {15},
@@ -326,6 +333,7 @@ fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
         let answer = match sign {
             '<' => n1 > n2,
             '>' => n1 < n2,
+            '=' => n1 == n2,
             _ => panic!("wrong sign provided"),
         };
         stack.push(StackData::Tok(Token::Bool(answer)));
@@ -335,6 +343,7 @@ fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
         let answer = match sign {
             '<' => n1 > n2,
             '>' => n1 < n2,
+            '=' => n1 == n2,
             _ => panic!("wrong sign provided"),
         };
         stack.push(StackData::Tok(Token::Bool(answer)));
@@ -346,7 +355,7 @@ fn do_the_thing<'input>(
     stack: &mut Vec<StackData<'input>>,
     envrnmt: &mut HashMap<&'input str, StackData<'input>>,
     user_names: &mut HashMap<&'input str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
     func_mode: bool,
 )
 // -> Option<Token<'input>>
@@ -431,6 +440,7 @@ fn do_the_thing<'input>(
             }
             Some(Bytecode::BinLess) => bin_num_comp(stack, '<'),
             Some(Bytecode::BinGrtr) => bin_num_comp(stack, '>'),
+            Some(Bytecode::BinEqu) => bin_num_comp(stack, '='),
             Some(Bytecode::JumpIfTrue(distance)) => match stack.pop().unwrap() {
                 StackData::Tok(lexer::Token::Bool(false)) => {
                     // println!("jumping if");
@@ -460,7 +470,7 @@ fn function_com<'input>(
     stack: &mut Vec<StackData<'input>>,
     envrnmt: &mut HashMap<&'input str, StackData<'input>>,
     user_names: &mut HashMap<&'input str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
 ) {
     /*
     function "compiler":
@@ -520,7 +530,7 @@ fn function_com<'input>(
 
 pub fn do_the_things<'input>(
     things: Vec<Vec<Bytecode<'input>>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>,
+    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
 ) {
     /*
     do the things:

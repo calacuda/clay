@@ -123,7 +123,9 @@ pub enum Nargs {
 
 fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                          user_funcs: &HashSet<&'input str>,
-                         stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) -> Vec<Bytecode<'input>> {
+                         stdlib: &HashMap<&'input str, (Nargs, &'input
+                         (dyn Fn(Vec<Token<'input>>) ->
+                         Result<Option<Token<'input>>, &'input str>))>) -> Vec<Bytecode<'input>> {
     let mut gen_funcs = Vec::new();
     let mut code = Vec::new();
     // println!("\ndat:{:?}", user_funcs);
@@ -145,7 +147,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                 }
             }
 
-            Some(lexer::Token::Symbol("<" | ">" | ">=" | "<=" | "==" | "!=")) => { // comparisons
+            Some(lexer::Token::Symbol("<" | ">" | ">=" | "<=" | "=" | "!=")) => { // comparisons
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
                 match node.data {
@@ -153,7 +155,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                     Some(lexer::Token::Symbol(">")) => code.push(Bytecode::BinGrtr),
                     // Some(lexer::Token::Symbol(">=")) => code.push(Bytecode::),
                     // Some(lexer::Token::Symbol("<=")) => code.push(Bytecode::),
-                    Some(lexer::Token::Symbol("==")) => code.push(Bytecode::BinEqu),
+                    Some(lexer::Token::Symbol("=")) => code.push(Bytecode::BinEqu),
                     Some(lexer::Token::Symbol("!=")) => {
                         code.push(Bytecode::BinEqu);
                         code.push(Bytecode::LogNot);
@@ -219,6 +221,12 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node<'input>>,
                 code.push(Bytecode::Jump(bcode.len()));
                 code.append(&mut bcode); // the else block
                 // code.push(Bytecode::Block("END_IF"));
+            }
+
+            Some(lexer::Token::Symbol("return")) => {
+                let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
+                code.append(&mut bcode);
+                break;
             }
 
             Some(lexer::Token::Symbol("let")) => {
@@ -357,7 +365,10 @@ fn _get_user_funcs<'input>(parsed: &Vec<parser::Node<'input>>) -> HashSet<&'inpu
 // }
 
 pub fn get_bytecode<'input>(parsed: &Vec<parser::Node<'input>>,
-                            stdlib: &HashMap<&'input str, (Nargs, &'input (dyn for<'r, 's> Fn(&'r mut Vec<Token<'s>>)))>) -> Vec<Vec<Bytecode<'input>>> { //-> Vec<Statments> {
+                            stdlib: &HashMap<&'input str, (Nargs, &'input
+                                    (dyn Fn(Vec<Token<'input>>) ->
+                                    Result<Option<Token<'input>>, &'input str>))>)
+                                    -> Vec<Vec<Bytecode<'input>>> { //-> Vec<Statments> {
     /*
     returns a vector of instructions to execute.
     this is interpreted later.

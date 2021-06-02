@@ -123,14 +123,17 @@ fn run(sc_name: String, test_mode: bool) {
         // _test_parser(&parsed);
         // _test_parser2(&parsed[0]);
         _test_parser3(&parsed);
-        println!();
+        // println!();
     }
     let bytecode = bcc::get_bytecode(&parsed, &stdlib); //
     if test_mode {
-        println!("{} bytecode:\n", scf);
+        println!("{}\n", scf);
         pp_bytecode(&bytecode);
         println!();
         println!(" program out put bellow: ");
+        println!("   i                i    ");
+        println!("  \\ /              \\ /    ");
+        println!("   V                V    ");
         println!("=========================");
     }
     bci::do_the_things(bytecode, &stdlib); //
