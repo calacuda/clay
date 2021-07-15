@@ -3,75 +3,19 @@ CLAY (Common Lisp According to Yogurt) is a version of common lisp with an
 interpreter written in rust. Development is tested against SBCL.
 
 
-### building clay:
+### Development branch
 
-First clone this repo. Then cd into the repo directory. Then build with the
-release flag (cargo build --release). Then copy the binary to a somewhere in
-your path variable.
-
-on linux:
-```
-$ > git clone https://github.com/calacuda/clay.git
-$ > cd clay
-$ > cargo build --release
-$ > cp /target/release/clay ~/.local/bin
-```
-
-
-### usage:
-
-Consider this lisp function that calculates factorials recursively.
-```
-(defun fact (k)
-  ;(write-line "k is " k)
-  (if (< k 2)
-      1
-    (* k (fact (- k 1)))
-    )
-  )
-
-(write (fact 5))
-(terpri)
-```
-
-the line that is commented out is commented out because, it will not work in SBCL.
-
-This code is stored in the "test.lisp" file. To run it with sbcl one would type:
-```
-$ sbcl --script test.lisp
-```
-to run with clay:
-```
-$ clay test.lisp
-```
-if you need/want to look at the lexer, parser, and bytecode compiler output, run
-using "--test".
-
-
-## benchmarks:
-
-SBCL:
-```
-$ > hyperfine -r 1000 "sbcl --script test.lisp"
-Benchmark #1: sbcl --script test.lisp
-  Time (mean ± σ):       8.8 ms ±   2.3 ms    [User: 4.2 ms, System: 4.9 ms]
-  Range (min … max):     6.9 ms …  17.9 ms    1000 runs
-```
-
-clay:
-
-```
-$ > hyperfine -r 1000 "target/release/clay test.lisp"
-Benchmark #1: target/release/clay test.lisp
-  Time (mean ± σ):       1.6 ms ±   1.3 ms    [User: 1.3 ms, System: 1.3 ms]
-  Range (min … max):     0.5 ms …   9.2 ms    1000 runs
-```
-
-In other words my implementation is faster then SBCL. However SBCL is much, and
-I mean much, better at dealing with large numbers.
+this is for developmental purposes only. check the todos to see what being done.
 
 
 ### TODO:
+
+* add in loadable .so lib files to add libraries written in other languages to
+  clay. (probably with the [libloading crate](https://lib.rs/crates/libloading))
+* add big nums (probably with the [num-bigint crate](https://lib.rs/crates/num-bigint))
+
+
+### future TODOs:
 
 * clean up the code (delete unneeded commented lines, fix cargo warnings, etc).
 * enable saving of byte code to a file.
