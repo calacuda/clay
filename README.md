@@ -1,6 +1,7 @@
 # CLAY
 CLAY (Common Lisp According to Yogurt) is a version of common lisp with an
-interpreter written in rust. Development is tested against SBCL.
+interpreter written in rust. Development is tested against SBCL. This is
+version 0.0.1, code named: MVP (Minimum Viable Product).
 
 
 ### building clay:
