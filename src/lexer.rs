@@ -4,11 +4,12 @@
 // this file has a few modifications made by me.
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
-pub enum Token<'input> {
+pub enum Token {
+//pub enum Token<'input> {
     LParen,
     RParen,
-    Symbol(&'input str),
-    Str(&'input str),
+    Symbol(String),
+    Str(String),
     Number(String),
     Bool(bool),
     EOF,
@@ -19,7 +20,7 @@ pub struct Lexer<'input> {
     pub pos: usize,
     pub col: usize,
     pub line_num: usize,
-    pub tok_buf: Option<Token<'input>>,
+    pub tok_buf: Option<Token>,
 }
 
 fn is_valid_in_symbol(c: char) -> bool {
@@ -39,14 +40,14 @@ impl<'input> Lexer<'input> {
                 tok_buf: None}
     }
 
-    pub fn _unread(&mut self, tok: Token<'input>) {
+    pub fn _unread(&mut self, tok: Token) {
         match self.tok_buf {
             Some(_) => panic!("error: unread buffer full"),
             None => self.tok_buf = Some(tok),
         }
     }
 
-    pub fn get_token(&mut self) -> Token<'input> {
+    pub fn get_token(&mut self) -> Token {
         if let Some(tok) = self.tok_buf.clone() {
             self.tok_buf = None;
             tok
@@ -66,7 +67,7 @@ impl<'input> Lexer<'input> {
                             None => break,
                         };
                     }
-                    return Token::Number(String::from(&self.s[start..self.pos]));
+                    return Token::Number(String::from(self.s[start..self.pos].to_string()));
                 }
                 else if is_valid_in_symbol(c) {
                     let mut s = c;
@@ -97,14 +98,14 @@ impl<'input> Lexer<'input> {
                     if c == '"' {
                         start += 1;
                         end -= 1;
-                        return Token::Str(&self.s[start..end]);
+                        return Token::Str(self.s[start..end].to_string());
                     }
                     if &self.s[start..end] == "nil" {
                         return Token::Bool(false)
                     } else if &self.s[start..end] == "t" {
                         return Token::Bool(true)
                     }
-                    return Token::Symbol(&self.s[start..end]);
+                    return Token::Symbol(self.s[start..end].to_string());
                 }
                 else {
                     match c {
@@ -176,10 +177,10 @@ impl<'input> Lexer<'input> {
     }
 }
 
-impl<'input> Iterator for Lexer<'input> {
-    type Item = Token<'input>;
+impl Iterator for Lexer<'_> {
+    type Item = Token;
 
-    fn next(&mut self) -> Option<Token<'input>> {
+    fn next(&mut self) -> Option<Token> {
         match self.get_token() {
             Token::EOF => None,
             t => Some(t),

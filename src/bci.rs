@@ -10,25 +10,25 @@ use std::collections::HashMap;
 // }
 
 #[derive(Debug, Clone)]
-pub enum StackData<'input> {
-    Func(Function<'input>),
-    StdFunc(Token<'input>),
-    Tok(Token<'input>),
+pub enum StackData {
+    Func(Function),
+    StdFunc(Token),
+    Tok(Token),
 }
 
 #[derive(Debug, Clone)]
-pub struct Function<'foobar> {
-    pub name: &'foobar str,
+pub struct Function {
+    pub name: String,
     pub nargs: Nargs,
-    pub params: Vec<Token<'foobar>>,
-    pub code: Vec<Bytecode<'foobar>>,
+    pub params: Vec<Token>,
+    pub code: Vec<Bytecode>,
     // pub tok: Option<lexer::Token<'foobar>>
 }
 
-impl<'foobar> Function<'foobar> {
-    fn new<'input>() -> Function<'input> {
+impl<'foobar> Function {
+    fn new() -> Function {
         Function {
-            name: "",
+            name: String::new(),
             nargs: Nargs::Num(0),
             params: Vec::new(),
             code: Vec::new(),
@@ -36,19 +36,19 @@ impl<'foobar> Function<'foobar> {
         }
     }
 
-    fn set_name<'input>(&mut self, name: &'foobar str) {
+    fn set_name(&mut self, name: String) {
         self.name = name;
     }
 
-    fn set_nargs<'input>(&mut self, nargs: Nargs) {
+    fn set_nargs(&mut self, nargs: Nargs) {
         self.nargs = nargs;
     }
 
-    fn add_param<'input>(&mut self, param: Token<'foobar>) {
+    fn add_param(&mut self, param: Token) {
         self.params.push(param);
     }
 
-    fn add_code(&mut self, tok: Bytecode<'foobar>) {
+    fn add_code(&mut self, tok: Bytecode) {
         self.code.push(tok);
     }
 
@@ -59,12 +59,12 @@ impl<'foobar> Function<'foobar> {
 
 fn get_params<'input>(
     nargs: usize,
-    stack: &mut Vec<StackData<'input>>,
-    user_names: &mut HashMap<&str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
-) -> (&'input str, Vec<Token<'input>>) {
+    stack: &mut Vec<StackData>,
+    user_names: &mut HashMap<String, StackData>,
+    stdlib: &HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))>,
+) -> (String, Vec<Token>) {
     let mut params = Vec::new();
-    let mut fname = "DEFAULT";
+    let mut fname = "DEFAULT".to_string();
     // println!("get_params stack: {:?}", stack);
     // println!("get_params stack: {:?}", stack.len());
 
@@ -103,10 +103,10 @@ fn get_params<'input>(
     return (fname, params);
 }
 
-fn make_args<'input>(
-    args: Vec<Token<'input>>,
-    params: &Vec<Token<'input>>,
-) -> HashMap<&'input str, StackData<'input>> {
+fn make_args(
+    args: Vec<Token>,
+    params: &Vec<Token>,
+) -> HashMap<String, StackData> {
     // println!("make_args args: {:?}", args);
     // println!("make_args params: {:?}", params);
     assert_eq!(args.len(), params.len());
@@ -134,10 +134,10 @@ fn make_args<'input>(
 
 fn call_func<'input>(
     nargs: usize,
-    stack: &mut Vec<StackData<'input>>,
-    _envrnmt: &mut HashMap<&'input str, StackData>,
-    user_names: &mut HashMap<&'input str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
+    stack: &mut Vec<StackData>,
+    _envrnmt: &mut HashMap<String, StackData>,
+    user_names: &mut HashMap<String, StackData>,
+    stdlib: &HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))>,
 ) {
     // println!("envrnmt: {:?}", envrnmt);
     let (func_name, mut params) = get_params(nargs, stack, user_names, stdlib);
@@ -146,11 +146,11 @@ fn call_func<'input>(
     // println!("call_func params: {:?}", params);
 
     // println!("call_func u_names: {:?}", user_names);
-    let working_user_name = user_names.clone();
+    let working_user_name: HashMap<String, StackData> = user_names.clone(); // might need a mut
 
-    if stdlib.contains_key(func_name) {
+    if stdlib.contains_key(&func_name) {
         // println!("f {}", f);
-        let func_details = stdlib.get(func_name);
+        let func_details = stdlib.get(&func_name);
         match func_details.unwrap().0 {
             Nargs::INF => {}
             Nargs::Num(num) => {
@@ -168,9 +168,9 @@ fn call_func<'input>(
             // Err(mesg) => panic!(mesg),
         }
         return;
-    } else if working_user_name.contains_key(func_name) {
+    } else if working_user_name.contains_key(&func_name) {
         // println!("calling function: {:?}", func_name);
-        let func_details = working_user_name.get(func_name).unwrap();
+        let func_details = working_user_name.get(&func_name).unwrap();
         let func;
         match func_details {
             StackData::Func(f) => {
@@ -197,7 +197,7 @@ fn call_func<'input>(
     }
 }
 
-fn bin_add<'input>(stack: &mut Vec<StackData<'input>>) {
+fn bin_add(stack: &mut Vec<StackData>) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
         _ => panic!("you can only add numbers"),
@@ -223,7 +223,7 @@ fn bin_add<'input>(stack: &mut Vec<StackData<'input>>) {
     stack.push(StackData::Tok(Token::Number(sum)));
 }
 
-fn bin_sub<'input>(stack: &mut Vec<StackData<'input>>) {
+fn bin_sub(stack: &mut Vec<StackData>) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
         _ => panic!("you can only subtract numbers"),
@@ -249,7 +249,7 @@ fn bin_sub<'input>(stack: &mut Vec<StackData<'input>>) {
     stack.push(StackData::Tok(Token::Number(sum)));
 }
 
-fn bin_mul<'input>(stack: &mut Vec<StackData<'input>>) {
+fn bin_mul(stack: &mut Vec<StackData>) {
     // println!("bin_mul stack: {:?}", stack);
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
@@ -277,7 +277,7 @@ fn bin_mul<'input>(stack: &mut Vec<StackData<'input>>) {
     stack.push(StackData::Tok(Token::Number(sum)));
 }
 
-fn bin_div<'input>(stack: &mut Vec<StackData<'input>>) {
+fn bin_div(stack: &mut Vec<StackData>) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
         _ => panic!("you can only divide numbers"),
@@ -295,9 +295,9 @@ fn bin_div<'input>(stack: &mut Vec<StackData<'input>>) {
 }
 
 fn store_name<'input>(
-                      stack: &mut Vec<StackData<'input>>,
-                      name_space: &mut HashMap<&'input str, StackData<'input>>,
-                      name: &'input str,
+                      stack: &mut Vec<StackData>,
+                      name_space: &mut HashMap<String, StackData>,
+                      name: String,
                      ) {
     // for _ in [0..stack.len()] {
     //     let tok = stack.pop().clone().unwrap();
@@ -317,7 +317,7 @@ fn store_name<'input>(
     name_space.insert(name, tmp_var);
 }
 
-fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
+fn bin_num_comp(stack: &mut Vec<StackData>, sign: char) {
     let s1 = match stack.pop().unwrap() {
         StackData::Tok(Token::Number(num)) => num,
         _ => panic!("you can only compare numbers"),
@@ -351,11 +351,11 @@ fn bin_num_comp<'input>(stack: &mut Vec<StackData<'input>>, sign: char) {
 }
 
 fn do_the_thing<'input>(
-    thing: &Vec<Bytecode<'input>>,
-    stack: &mut Vec<StackData<'input>>,
-    envrnmt: &mut HashMap<&'input str, StackData<'input>>,
-    user_names: &mut HashMap<&'input str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
+    thing: &Vec<Bytecode>,
+    stack: &mut Vec<StackData>,
+    envrnmt: &mut HashMap<String, StackData>,
+    user_names: &mut HashMap<String, StackData>,
+    stdlib: &HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))>,
     func_mode: bool,
 )
 // -> Option<Token<'input>>
@@ -421,10 +421,10 @@ fn do_the_thing<'input>(
             }
             Some(Bytecode::StoreName(Token::Symbol(name))) => {
                 if func_mode {
-                    store_name(stack, envrnmt, name.clone());
+                    store_name(stack, envrnmt, name.to_string());
                 }
                 else {
-                    store_name(stack, user_names, name.clone());
+                    store_name(stack, user_names, name.to_string());
                 }
             }
             Some(Bytecode::StoreName(Token::LParen | Token::RParen)) => panic!("ERROR: parenthesis are a reserved token."),
@@ -466,11 +466,11 @@ fn do_the_thing<'input>(
 }
 
 fn function_com<'input>(
-    thing: &mut Vec<Bytecode<'input>>,
-    stack: &mut Vec<StackData<'input>>,
-    envrnmt: &mut HashMap<&'input str, StackData<'input>>,
-    user_names: &mut HashMap<&'input str, StackData<'input>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
+    thing: &mut Vec<Bytecode>,
+    stack: &mut Vec<StackData>,
+    envrnmt: &mut HashMap<String, StackData>,
+    user_names: &mut HashMap<String, StackData>,
+    stdlib: &HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))>,
 ) {
     /*
     function "compiler":
@@ -529,8 +529,8 @@ fn function_com<'input>(
 }
 
 pub fn do_the_things<'input>(
-    things: Vec<Vec<Bytecode<'input>>>,
-    stdlib: &HashMap<&'input str, (Nargs, &'input (dyn Fn(Vec<Token<'input>>) -> Result<Option<Token<'input>>, &'input str>))>,
+    things: Vec<Vec<Bytecode>>,
+    stdlib: &HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))>,
 ) {
     /*
     do the things:
@@ -538,8 +538,8 @@ pub fn do_the_things<'input>(
     the entry point for the byte code interpreter. run this function to interpret bytecode.
     */
     let mut stack: Vec<StackData> = Vec::new();
-    let mut user_names: HashMap<&'input str, StackData> = HashMap::new();
-    let mut envrnmt: HashMap<&'input str, StackData> = HashMap::new();
+    let mut user_names: HashMap<String, StackData> = HashMap::new();
+    let mut envrnmt: HashMap<String, StackData> = HashMap::new();
 
     for g_block in things {
         // println!("g_block[0]: {:?}", g_block[0]);

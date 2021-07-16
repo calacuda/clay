@@ -84,7 +84,7 @@ fn _test_parser3(nodes: &Vec<parser::Node>) {
     }
 }
 
-fn pp_bytecode<'input>(bytecode: &Vec<Vec<bcc::Bytecode<'input>>>) {
+fn pp_bytecode<'input>(bytecode: &Vec<Vec<bcc::Bytecode>>) {
     println!("bcc output:");
     for global in bytecode {
         for code in global {

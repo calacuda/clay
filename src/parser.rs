@@ -6,11 +6,11 @@ use crate::lexer;
 // use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub struct Node<'arb> {
+pub struct Node {
     pub parent_id: Option<NodeID>,
     pub id: NodeID,
-    pub children: Vec<Node<'arb>>,
-    pub data: Option<lexer::Token<'arb>>,
+    pub children: Vec<Node>,
+    pub data: Option<lexer::Token>,
     // pub bytecode: Vec<Bytecode<'arb>>,
 }
 
@@ -19,8 +19,8 @@ pub struct NodeID {
     pub index: usize,
 }
 
-impl<'arb> Node<'arb> {
-    pub fn new(id: NodeID) -> Node<'arb> {
+impl<'arb> Node {
+    pub fn new(id: NodeID) -> Node {
         Node {
             id: id,
             parent_id: None,
@@ -30,22 +30,22 @@ impl<'arb> Node<'arb> {
         }
     }
 
-    pub fn add_child(mut self, node_id: Node<'arb>) -> Node<'arb> {
+    pub fn add_child(mut self, node_id: Node) -> Node {
         self.children.push(node_id);
         return self;
     }
 
-    pub fn add_children(mut self, mut node_id: Vec<Node<'arb>>) -> Node<'arb> {
+    pub fn add_children(mut self, mut node_id: Vec<Node>) -> Node {
         self.children.append(&mut node_id);
         return self;
     }
 
-    pub fn add_data(mut self, data: lexer::Token<'arb>) -> Node<'arb> {
+    pub fn add_data(mut self, data: lexer::Token) -> Node {
         self.data = Some(data);
         return self;
     }
 
-    pub fn set_parent(mut self, pid: NodeID) -> Node<'arb> {
+    pub fn set_parent(mut self, pid: NodeID) -> Node {
         self.parent_id = Some(pid);
         return self;
     }
@@ -64,8 +64,8 @@ impl NodeID {
     }
 }
 
-fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token<'arb>, pid: usize, uid: usize,
-                last_paren: char) -> (Vec<Node<'arb>>, Vec<Node<'arb>>, lexer::Token<'arb>, (usize, usize)) { // id = id for the node.
+fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, uid: usize,
+                last_paren: char) -> (Vec<Node>, Vec<Node>, lexer::Token, (usize, usize)) { // id = id for the node.
     /*
      * this is a big, scarry, recurive function, with a loop in it. aka it's the two things
      * that should NEVER be used together. bassically it recurses though the source code based on
