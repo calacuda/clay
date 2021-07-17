@@ -123,8 +123,8 @@ pub enum Nargs {
 
 fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                          user_funcs: &HashSet<String>,
-                         stdlib: &HashMap<String, (Nargs, &'input
-                         (dyn Fn(Vec<Token>) ->
+                         stdlib: &HashMap<&'input str, (Nargs, &'input
+                         (dyn Fn(&Vec<Token>) ->
                          Result<Option<Token>, &'input str>))>) -> Vec<Bytecode> {
     let mut gen_funcs = Vec::new();
     let mut code = Vec::new();
@@ -135,30 +135,30 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
     for node in parsed.iter() {
         // println!("node data: {:?}", node.data);
         match &node.data {
-            Some(lexer::Token::Symbol(sym)) if (sym == "+") | (sym == "*") |
-	                                       (sym == "/") | (sym == "-") => { // math operators.
+            Some(lexer::Token::Symbol(sym)) if (sym == &"+") | (sym == &"*") |
+	                                       (sym == &"/") | (sym == &"-") => { // math operators.
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
-                match node.data {
-                    Some(lexer::Token::Symbol(sym)) if sym == "+" => code.push(Bytecode::BinAdd),
-                    Some(lexer::Token::Symbol(sym)) if sym == "*" => code.push(Bytecode::BinMul),
-                    Some(lexer::Token::Symbol(sym)) if sym == "-" => code.push(Bytecode::BinSub),
-                    Some(lexer::Token::Symbol(sym)) if sym == "/" => code.push(Bytecode::BinDiv),
+                match &node.data {
+                    Some(lexer::Token::Symbol(sym)) if sym == &"+" => code.push(Bytecode::BinAdd),
+                    Some(lexer::Token::Symbol(sym)) if sym == &"*" => code.push(Bytecode::BinMul),
+                    Some(lexer::Token::Symbol(sym)) if sym == &"-" => code.push(Bytecode::BinSub),
+                    Some(lexer::Token::Symbol(sym)) if sym == &"/" => code.push(Bytecode::BinDiv),
                     _ => {},
                 }
             }
 
-            Some(lexer::Token::Symbol(sym)) if (sym == "<") | (sym == ">") | (sym == ">=") | (sym == "<=") |
-	                                       (sym == "=") | (sym == "!=") => { // comparisons
+            Some(lexer::Token::Symbol(sym)) if (sym == &"<") | (sym == &">") | (sym == &">=") | (sym == &"<=") |
+	                                       (sym == &"=") | (sym == &"!=") => { // comparisons
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
-                match node.data {
-                    Some(lexer::Token::Symbol(sym)) if sym == "<" => code.push(Bytecode::BinLess),
-                    Some(lexer::Token::Symbol(sym)) if sym == ">" => code.push(Bytecode::BinGrtr),
-                    Some(lexer::Token::Symbol(sym)) if sym == ">=" => panic!("greater then or equal to is not implemented yet"), // code.push(Bytecode::),
-                    Some(lexer::Token::Symbol(sym)) if sym == "<=" => panic!("less then or equal to is not implemented yet"), // code.push(Bytecode::),
-                    Some(lexer::Token::Symbol(sym)) if sym == "=" => code.push(Bytecode::BinEqu),
-                    Some(lexer::Token::Symbol(sym)) if sym == "!=" => {
+                match &node.data {
+                    Some(lexer::Token::Symbol(sym)) if sym == &"<" => code.push(Bytecode::BinLess),
+                    Some(lexer::Token::Symbol(sym)) if sym == &">" => code.push(Bytecode::BinGrtr),
+                    Some(lexer::Token::Symbol(sym)) if sym == &">=" => panic!("greater then or equal to is not implemented yet"), // code.push(Bytecode::),
+                    Some(lexer::Token::Symbol(sym)) if sym == &"<=" => panic!("less then or equal to is not implemented yet"), // code.push(Bytecode::),
+                    Some(lexer::Token::Symbol(sym)) if sym == &"=" => code.push(Bytecode::BinEqu),
+                    Some(lexer::Token::Symbol(sym)) if sym == &"!=" => {
                         code.push(Bytecode::BinEqu);
                         code.push(Bytecode::LogNot);
                     },
@@ -166,7 +166,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 }
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == "defun" => {
+            Some(lexer::Token::Symbol(sym)) if sym == &"defun" => {
                 gen_funcs.push(node.children[0].data.clone().unwrap());
                 // dat.add_func(node.children[0].data.clone().unwrap());
 
@@ -204,7 +204,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 //break;
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == "if" => {
+            Some(lexer::Token::Symbol(sym)) if sym == &"if" => {
                 // code.push(Bytecode::Block("CONDITION_BLOCK")); // uncomment if conditional are broken
                 let mut cond_bcode = _get_bytecode(vec![node.children[0].clone()], user_funcs, stdlib);
                 // let distance = bcode.len();
@@ -225,13 +225,13 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 // code.push(Bytecode::Block("END_IF"));
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == "return" => {
+            Some(lexer::Token::Symbol(sym)) if sym == &"return" => {
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
                 break;
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == "let" => {
+            Some(lexer::Token::Symbol(sym)) if sym == &"let" => {
                 // let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 // // code.append(&mut bcode);
                 // println!("\nlet begin:");
@@ -248,6 +248,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                                  lexer::Token::RParen) => panic!("ERROR: unexpected parenthesis"),
                             Some(lexer::Token::Str(_) |
                                  lexer::Token::Bool(_) |
+                                 lexer::Token::Form(_) |
                                  lexer::Token::Number(_)) =>  panic!("ERROR: can't use data as a variable name"),
                             None => panic!("can't read variable name"),
                         }
@@ -267,15 +268,15 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 //     code.push(Bytecode::CallFunc);
                 // }
                 //println!("name: {}, {}", name, stdlib.contains_key(name));
-                if user_funcs.contains(name){
+                if user_funcs.contains(&name.to_string()){
                     code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
                     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                     code.append(&mut bcode);
                     code.push(Bytecode::CallFunc(node.children.len()));
                 }
-                else if stdlib.contains_key(name)  {
+                else if stdlib.contains_key(&name.as_ref())  {
                     let nargs = node.children.len();
-                    match stdlib.get(name).unwrap().0 {
+                    match stdlib.get(&name.as_ref()).unwrap().0 {
                         Nargs::Num(num) => {
                             if nargs == num {
                                 code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
@@ -308,7 +309,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                     code.append(&mut bcode);
                     // println!("adding LoadName(\"{}\"), from children: {:?}", name, node.children);
                     // println!("");
-                    code.push(Bytecode::LoadName(lexer::Token::Symbol(name.to_string())));
+                    code.push(Bytecode::LoadName(lexer::Token::Symbol(name.to_owned())));
                 }
             }
 
@@ -318,7 +319,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 code.push(Bytecode::Push(node.data.clone().unwrap()));
                 // break;
             }
-
+            Some(lexer::Token::Form(_)) => code.push(Bytecode::Push(node.data.clone().unwrap())),
             _ => {
                 println!("{:?}", node.data);
                 panic!("ERROR: you should not be seeing this.");
@@ -332,10 +333,10 @@ fn _get_user_funcs<'input>(parsed: &Vec<parser::Node>) -> HashSet<String>{
     let mut user_funcs = HashSet::new();
 
     for globe in parsed.iter() {
-        match globe.data {
+        match &globe.data {
             Some(lexer::Token::Symbol(sym)) if sym == "defun" => {
-                match globe.children[0].data {
-                    Some(lexer::Token::Symbol(func_name)) => user_funcs.insert(func_name),
+                match &globe.children[0].data {
+                    Some(lexer::Token::Symbol(func_name)) => user_funcs.insert(func_name.to_string()),
                     _ => panic!("ERROR: no function name after function declaration."),
                 };
             }
@@ -367,8 +368,8 @@ fn _get_user_funcs<'input>(parsed: &Vec<parser::Node>) -> HashSet<String>{
 // }
 
 pub fn get_bytecode<'input>(parsed: &Vec<parser::Node>,
-                            stdlib: &HashMap<String, (Nargs, &'input
-                                    (dyn Fn(Vec<Token>) ->
+                            stdlib: &HashMap<&'input str, (Nargs, &'input
+                                    (dyn Fn(&Vec<Token>) ->
                                     Result<Option<Token>, &'input str>))>)
                                     -> Vec<Vec<Bytecode>> { //-> Vec<Statments> {
     /*

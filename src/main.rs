@@ -1,5 +1,7 @@
 use std::fs::read_to_string;
 use std::env;
+use std::io::stdin;
+use std::collections::HashMap;
 
 mod parser;
 mod bcc;
@@ -136,7 +138,40 @@ fn run(sc_name: String, test_mode: bool) {
         println!("   V                V    ");
         println!("=========================");
     }
-    bci::do_the_things(bytecode, &stdlib); //
+    bci::do_the_things(&bytecode, &stdlib); //
+}
+
+fn _repl() -> String {
+
+    println!("clay > ");
+    let mut input = String::new();
+    let stdlib = std_lib::get_std_funcs();
+
+    loop {
+        let mut l = String::new();
+
+        stdin().read_line(&mut l).unwrap();
+        input = input + &l;
+        if l == "\n" {
+            break;
+        }
+    }
+
+    // input = input + l.as_ref();
+    let parsed = parser::parse(&input);
+    let bytecode = bcc::get_bytecode(&parsed, &stdlib);
+    bci::do_the_things(&bytecode, &stdlib);
+
+    return input;
+}
+
+fn repl() {
+    println!("Heads up, this repl is in testing and most things don't work.\n");
+
+    let mut input = String::new();
+    loop {
+        _repl();
+    }
 }
 
 fn main() {
@@ -153,7 +188,10 @@ fn main() {
     //     let bytecode = bcc::get_bytecode(&parsed, &stdlib);
     //     bci::do_the_things(bytecode, &stdlib);
     // }
-    if args.len() > 1 {
+    if args.len() == 0 {
+        repl();
+        return;
+    } else if args.len() > 1 {
         for arg in args {
             if arg != "--test" {
                 println!("{}", arg);

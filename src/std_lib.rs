@@ -1,3 +1,9 @@
+/*
+TODO's:
+* add a raw_write and a raw_write_line functions. will be the same as write and write_lines, but
+will print with out the space in between the tokens.
+*/
+
 use crate::parser;
 use crate::lexer;
 use crate::lexer::Token;
@@ -30,69 +36,100 @@ use libloading;
 //     }
 // }
 
-pub fn from<'input>(imports: Vec<Token>) -> Result<Option<Token>, &'input str> {
+pub fn from<'a>(imports: &Vec<Token>) -> Result<Option<Token>, &'a str> {
     /*
     (from LIB `(FUNC ARG_1 ... ARG_n))
     loads LIB.so, calls FUNC form LIB.so with ARGS 1 through n.
-    FUNC return val must be in the form of a string like this "42=str", or "42=num". this 
+    FUNC return val must be in the form of a string like this "42=str", or "42=num". this
     will be translated into a Str Token or a number token respectively.
      */
     let site_packs = format!("{}/.local/lib/clay/site-packages/", env::var("HOME").unwrap());
     let cur_dir = env::current_dir().unwrap();
-    let mut pack_path = Path::new(&site_packs);
-    let lib_name = match imports[0] {
-	Token::Symbol(lib_name) => lib_name,
-	Token::Str(lib_name) => lib_name,
+    // println!("{:?}", &imports[1]);
+    let mut lib_name = match &imports[1] {
+	Token::Symbol(l_name) => l_name.to_string(),
+	Token::Str(l_name) => l_name.to_string(),
 	_ => panic!("I lib name must be a symbol or string, can't be other data literal"),
     };
 
-    pack_path.join(Path::new(&lib_name));
-    
-    let mut cur_path = Path::new(cur_dir.as_os_str());
-    cur_path.join(Path::new(&lib_name));
-    let func_name = match imports[1] {
+    if lib_name.contains('~') {
+        lib_name = lib_name.replace("~", env::var("HOME").unwrap().as_str().as_ref());
+    }
+
+    let pack_path = Path::new(&site_packs)
+                        .join(Path::new(&lib_name));
+                        // .as_os_str();
+
+    let cur_path = Path::new(cur_dir.as_os_str())
+                        .join(Path::new(&lib_name));
+                        //.as_os_str();
+
+    let full_path = Path::new(&lib_name);
+
+    let data = match &imports[0] {
+        Token::Form(atoms) => atoms,
+        _ => panic!("a form must come after the library name."),
+    };
+
+    let func_name = match &data[0] {
 	Token::Symbol(lib_name) => lib_name,
 	Token::Str(lib_name) => lib_name,
 	_ => panic!("I func name must be a symbol or string, can't be other data literal"),
     };
 
+    // println!("cur_path :  {:?}", &cur_path);
+    // println!("full_path :  {:?}", &full_path);
+    // println!("pack_path :  {:?}", &pack_path);
+
     let lib_path =
 	if cur_path.exists() {
-	    cur_path
+        // println!("cur_path");
+	    cur_path.as_os_str()
+    } else if full_path.exists() {
+        // println!("full_path");
+        full_path.as_os_str()
 	} else if pack_path.exists() {
-	    pack_path
+        // println!("pack_path");
+	    pack_path.as_os_str()
 	} else {
 	    panic!("the requested module is not available");
 	};
-    
+
     unsafe {
-        let lib = libloading::Library::new(libloading::library_filename(lib_path)).unwrap();
-        let func: libloading::Symbol<unsafe extern fn(Vec<Token>) -> String> = lib.get(func_name
-										       .as_bytes())
-	    .unwrap();
-	let raw_out = func(imports[2..].to_vec());
-	let (output, ty) = match raw_out.rsplit_once('=') {
-	    Some(something) => something,
-	    _ => panic!("external function lacks either data or data type.")
-	};
-	//output = ;
-	Ok(Some(make_tok(output.to_string(), ty)))	
+        // let lib = libloading::Library::new(libloading::library_filename(lib_path)).unwrap();
+        let lib = libloading::Library::new(lib_path).unwrap();
+        let func: libloading::Symbol<unsafe extern fn(Vec<Token>) ->
+                                     Result<Option<(String, String)>, &'a str>> =
+                                     lib.get(func_name.as_bytes())
+	                                    .unwrap();
+        let tok: Token;
+        let raw_out =
+        match func(data[1..].to_vec()) {
+            Ok(Some(val)) => val,
+            Ok(None) => return Ok(None),
+            Err(error) => panic!("{:?}", error),
+        };
+        match raw_out.1.as_str() {
+            "str" => tok = Token::Str(raw_out.0),
+            "symbol" => tok = Token::Symbol(raw_out.0),
+            "bool" => tok = Token::Bool(make_bool(&raw_out.0)),
+            "num" => tok = Token::Number(raw_out.0),
+            ty => panic!("you cant return the datatype, {}", ty),
+        };
+
+        Ok(Some(tok))
     }
 }
 
-fn make_tok(output: String, ty: &str) -> Token {
-    match ty {
-	    "str" => Token::Str(output),
-	    "STR" => Token::Str(output),
-	    "bool" => Token::Bool(make_bool(&output)),
-	    "BOOL" => Token::Bool(make_bool(&output)),
-	    "symbol" => Token::Symbol(output),
-	    "SYMBOL" => Token::Symbol(output),
-	    "num" => Token::Number(output),
-	    "NUM" => Token::Number(output),
-	    _ => panic!("you cant return the datatype, {}", ty)
-	}
-}
+// fn make_tok<'input>(output: &str, ty: &'input str) -> Token<'input> {
+//     match ty.to_lowercase().as_ref() {
+// 	    "str" => Token::Str(output.to_string().as_str()),
+// 	    "bool" => Token::Bool(make_bool(&output)),
+// 	    "symbol" => Token::Symbol(output.to_owned().as_str()),
+// 	    "num" => Token::Number(output.to_owned()),
+// 	    _ => panic!("you cant return the datatype, {}", ty)
+// 	}
+// }
 
 fn make_bool(input: &str) -> bool {
     match input {
@@ -102,7 +139,7 @@ fn make_bool(input: &str) -> bool {
     }
 }
 
-pub fn not<'input>(truth: Vec<Token>) -> Result<Option<Token>, &'input str> {
+pub fn not<'a>(truth: &Vec<Token>) -> Result<Option<Token>, &'a str> {
     /*
     takes a boolean val as an arguement returns its negation.
     work inprogress.
@@ -115,44 +152,60 @@ pub fn not<'input>(truth: Vec<Token>) -> Result<Option<Token>, &'input str> {
 }
 
 
-pub fn write_line<'input>(lines: Vec<Token>) -> Result<Option<Token>, &'input str> {
-    write(lines);
+pub fn write_line<'a>(lines: &Vec<Token>) -> Result<Option<Token>, &'a str> {
+    let _ = write(lines);
     println!();
     return Ok(None);
 }
 
 
-pub fn write<'input>(lines: Vec<Token>) -> Result<Option<Token>, &'input str> {
+pub fn write<'a>(lines: &Vec<Token>) -> Result<Option<Token>, &'a str> {
     // println!("write args: {:?}", lines);
     let mut loc_lines = lines.clone();
-    for _ in 0..loc_lines.len() {
+    let last_i = loc_lines.len();
+    for i in 0..last_i {
         let line = loc_lines.pop().unwrap();
-        match line {
-            Token::Symbol(output) => print!("{}", output),
-            Token::Number(output) => print!("{}", output),
-            Token::Str(output) => print!("{}", output),
-            Token::Bool(truth) => print!("{}", match truth {true => "t", false => "nil"}),
-            _ => {} //return Err("ERROR: on write_line. you can't print that."),
+        print_line(line);
+        if i != last_i-1 {
+            print!(" ");
         }
     }
     return Ok(None);
 }
 
+fn print_line(line: Token) {
+    match line {
+        Token::Symbol(output) => print!("{}", output),
+        Token::Number(output) => print!("{}", output),
+        Token::Str(output) => print!("{}", output),
+        Token::Form(form) => print_form(*form),
+        Token::Bool(truth) => print!("{}", match truth {true => "t", false => "nil"}),
+        _ => {} //return Err("ERROR: on write_line. you can't print that."),
+    }
+}
 
-pub fn terpri<'input>(_things: Vec<Token>) -> Result<Option<Token>, &'input str> {
+fn print_form(form: Vec<Token>) {
+    let mut loc_form = form.clone();
+    loc_form.reverse();
+    print!("`(");
+    let _ = write(&loc_form);
+    print!(")");
+}
+
+pub fn terpri<'a>(_things: &Vec<Token>) -> Result<Option<Token>, &'a str> {
     println!();
     return Ok(None);
 }
 
 
-pub fn get_std_funcs<'input>() -> HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))> {
-    let mut std_funcs: HashMap<String, (Nargs, &'input (dyn Fn(Vec<Token>) -> Result<Option<Token>, &'input str>))> = HashMap::new();
+pub fn get_std_funcs<'a>() -> HashMap<&'a str, (Nargs, &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>))> {
+    let mut std_funcs: HashMap<&'a str, (Nargs, &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>))> = HashMap::new();
 
-    std_funcs.insert("write".to_string(), (Nargs::INF, &write));
-    std_funcs.insert("write-line".to_string(), (Nargs::INF, &write_line));
-    std_funcs.insert("terpri".to_string(), (Nargs::Num(0), &terpri));
-    std_funcs.insert("not".to_string(), (Nargs::Num(1), &not));
-
+    std_funcs.insert("write", (Nargs::INF, &write));
+    std_funcs.insert("write-line", (Nargs::INF, &write_line));
+    std_funcs.insert("terpri", (Nargs::Num(0), &terpri));
+    std_funcs.insert("not", (Nargs::Num(1), &not));
+    std_funcs.insert("from", (Nargs::Num(2), &from));
 
     return std_funcs;
 }
