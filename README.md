@@ -73,9 +73,9 @@ I mean much, better at dealing with large numbers.
 
 ### TODO:
 
-* clean up the code (delete unneeded commented lines, fix cargo warnings, etc).
-* enable saving of byte code to a file.
-
+[ ] clean up the code (delete unneeded commented lines, fix cargo warnings, etc).
+[ ] enable saving of byte code to a file.
+[*] compiled rust lib loading.
 
 ### Acknowledgement:
 
