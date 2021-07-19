@@ -59,14 +59,18 @@ impl<'arb> Node {
 
 impl NodeID {
     pub fn new(index: usize) -> NodeID {
-        NodeID {
-            index: index,
-        }
+        NodeID { index: index }
     }
 }
 
-fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usize,
-                last_paren: char) -> (Vec<Node>, Vec<Node>, Token, (usize, usize)) { // id = id for the node.
+fn _parse<'arb>(
+    lex: &mut lexer::Lexer<'arb>,
+    token: Token,
+    pid: usize,
+    uid: usize,
+    last_paren: char,
+) -> (Vec<Node>, Vec<Node>, Token, (usize, usize)) {
+    // id = id for the node.
     /*
      * this is a big, scarry, recurive function, with a loop in it. aka it's the two things
      * that should NEVER be used together. bassically it recurses though the source code based on
@@ -120,7 +124,8 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usi
                     u_id = lex.pos;
                     // println!("before: {} {}", lp, rp);
 
-                    let (mut child_block, cids, nt_cp, p_count) = _parse(lex, next_tok, uid, u_id + 1, 'l');
+                    let (mut child_block, cids, nt_cp, p_count) =
+                        _parse(lex, next_tok, uid, u_id + 1, 'l');
 
                     // let mut child_clone = child_block.clone();
                     block.append(&mut child_block);
@@ -136,8 +141,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usi
                     }
                     tok = nt_cp;
                     // println!("after: {} {}", lp, rp);
-                }
-                else {
+                } else {
                     next_tok = lex.get_token();
                 }
             }
@@ -153,11 +157,11 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usi
                 break;
             }
 
-            Token::Symbol(_) |
-            Token::Number(_) |
-            Token::Bool(_) |
-            Token::Form(_) |
-            Token::Str(_) => {
+            Token::Symbol(_)
+            | Token::Number(_)
+            | Token::Bool(_)
+            | Token::Form(_)
+            | Token::Str(_) => {
                 // println!("added {:?} to node", tok);
                 node = node.add_data(tok).set_parent(NodeID::new(pid));
                 let tmp_node = node.clone();
@@ -171,10 +175,10 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usi
                 u_id += 1;
                 // println!("{:?}, {:?}", tok, nt_cp);
                 tok = nt_cp;
-                if lp > rp { // may cause error pls error check.
+                if lp > rp {
+                    // may cause error pls error check.
                     panic!("ERROR: unclosed left parenthesis.")
-                }
-                else if lp < rp {
+                } else if lp < rp {
                     panic!("ERROR: too many right parenthesis.")
                 }
                 break;
@@ -186,7 +190,6 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usi
 }
 
 pub fn parse(source_code: &String) -> Vec<Node> {
-
     let mut lex = lexer::Lexer::new(source_code);
     let next_tok = lex.get_token();
     let u_id = lex.pos;
