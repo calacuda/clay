@@ -73,9 +73,15 @@ I mean much, better at dealing with large numbers.
 
 ### TODO:
 
-[ ] clean up the code (delete unneeded commented lines, fix cargo warnings, etc).
+[ ] implement an import statement to add libraries to the current name space.
+[ ] test if C libraries can be imported.
 [ ] enable saving of byte code to a file.
-[*] compiled rust lib loading.
+[x] compiled rust lib loading.
+
+### perpetual TODOs:
+
+* clean up the code (delete unneeded commented lines, fix cargo warnings, etc).
+
 
 ### Acknowledgement:
 
