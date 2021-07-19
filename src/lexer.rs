@@ -3,19 +3,21 @@
 //
 // this file has a few modifications made by me.
 
-#[derive(Debug, PartialEq, Clone, Eq, Hash)]
-pub enum Token {
-//pub enum Token<'input> {
-    LParen,
-    RParen,
-    Symbol(String),
-    Str(String),
-    Number(String),
-    Bool(bool),
-    // Tick,
-    Form(Box<Vec<Token>>),
-    EOF,
-}
+// #[derive(Debug, PartialEq, Clone, Eq, Hash)]
+// pub enum Token {
+// //pub enum Token<'input> {
+//     LParen,
+//     RParen,
+//     Symbol(String),
+//     Str(String),
+//     Number(String),
+//     Bool(bool),
+//     // Tick,
+//     Form(Box<Vec<Token>>),
+//     EOF,
+// }
+
+use clay_lib::Token;
 
 pub struct Lexer<'input> {
     pub s: &'input str,
@@ -26,20 +28,22 @@ pub struct Lexer<'input> {
 }
 
 fn is_valid_in_symbol(c: char) -> bool {
-    c.is_alphabetic() ||
-    match c {
-        '+' | '-' | '*' | '/' | '#' | '<' | '>' | '=' | '"' | '_' => true,
-        _ => false,
-    }
+    c.is_alphabetic()
+        || match c {
+            '+' | '-' | '*' | '/' | '#' | '<' | '>' | '=' | '"' | '_' => true,
+            _ => false,
+        }
 }
 
 impl<'input> Lexer<'input> {
     pub fn new(source: &'input str) -> Lexer<'input> {
-        Lexer { s: source,
-                pos: 0,
-                col: 0,
-                line_num: 1,
-                tok_buf: None}
+        Lexer {
+            s: source,
+            pos: 0,
+            col: 0,
+            line_num: 1,
+            tok_buf: None,
+        }
     }
 
     pub fn _unread(&mut self, tok: Token) {
@@ -53,8 +57,7 @@ impl<'input> Lexer<'input> {
         if let Some(tok) = self.tok_buf.clone() {
             self.tok_buf = None;
             tok
-        }
-        else {
+        } else {
             let mut iter = self.s[self.pos..].chars().peekable();
             while let Some(&c) = iter.peek() {
                 if c.is_numeric() {
@@ -70,8 +73,7 @@ impl<'input> Lexer<'input> {
                         };
                     }
                     return Token::Number(String::from(self.s[start..self.pos].to_string()));
-                }
-                else if is_valid_in_symbol(c) {
+                } else if is_valid_in_symbol(c) {
                     let mut s = c;
                     let mut start = self.pos;
                     // print!("{}", s);
@@ -79,7 +81,8 @@ impl<'input> Lexer<'input> {
                     if c == '"' {
                         is_string = true;
                     }
-                    while s.is_alphanumeric() || is_valid_in_symbol(s) || is_string {// if c == '"' { s == ' ' && s != '"'} else {s != ' ' && s == '"'} {
+                    while s.is_alphanumeric() || is_valid_in_symbol(s) || is_string {
+                        // if c == '"' { s == ' ' && s != '"'} else {s != ' ' && s == '"'} {
                         iter.next();
                         self.pos += 1;
                         self.col += 1;
@@ -103,13 +106,12 @@ impl<'input> Lexer<'input> {
                         return Token::Str(self.s[start..end].to_string());
                     }
                     if &self.s[start..end] == "nil" {
-                        return Token::Bool(false)
+                        return Token::Bool(false);
                     } else if &self.s[start..end] == "t" {
-                        return Token::Bool(true)
+                        return Token::Bool(true);
                     }
                     return Token::Symbol(self.s[start..end].to_string());
-                }
-                else {
+                } else {
                     match c {
                         '\n' => {
                             iter.next();
@@ -117,13 +119,13 @@ impl<'input> Lexer<'input> {
                             self.col = 0;
                             self.line_num += 1;
                             continue;
-                        },
+                        }
                         '\t' => {
                             iter.next();
                             self.pos += 1;
                             self.col += 1;
                             continue;
-                        },
+                        }
                         ';' => {
                             iter.next();
                             self.pos += 1;
@@ -136,25 +138,25 @@ impl<'input> Lexer<'input> {
                             }
                             self.line_num += 1;
                             self.col = 0;
-                        },
+                        }
                         ' ' => {
                             iter.next();
                             self.pos += 1;
                             self.col += 1;
-                            continue
-                        },
+                            continue;
+                        }
                         '(' => {
                             iter.next();
                             self.pos += 1;
                             self.col += 1;
-                            return Token::LParen
-                        },
+                            return Token::LParen;
+                        }
                         ')' => {
                             iter.next();
                             self.pos += 1;
                             self.col += 1;
-                            return Token::RParen
-                        },
+                            return Token::RParen;
+                        }
                         '`' => {
                             iter.next();
                             let mut form = Vec::new();
@@ -207,7 +209,6 @@ impl<'input> Lexer<'input> {
                         //     }
                         //     //return Token::Symbol(text.into_iter().collect::<str>());
                         // },
-
                         _ => panic!("line {}:{} unexpected char: {}", self.line_num, self.col, c),
                     }
                 }
