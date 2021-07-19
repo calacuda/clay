@@ -4,15 +4,15 @@ TODO's:
 will print with out the space in between the tokens.
 */
 
-use crate::bcc;
-use crate::bcc::{Bytecode, Nargs};
+// use crate::bcc;
+use crate::bcc::Nargs;
 // use crate::lexer;
 // use crate::lexer::Token;
-use crate::parser;
+// use crate::parser;
 use clay_lib::Token;
 
 use std::collections::HashMap;
-use std::collections::HashSet;
+// use std::collections::HashSet;
 use std::env;
 use std::path::Path;
 
@@ -93,57 +93,56 @@ pub fn from<'a>(imports: &Vec<Token>) -> Result<Option<Token>, &'a str> {
         panic!("the requested module is not available");
     };
 
-    let args = make_f_args(data[1..].to_vec());
+    // let args = make_f_args(data[1..].to_vec());
+    let args = data[1..].to_vec();
 
     unsafe {
         // let lib = libloading::Library::new(libloading::library_filename(lib_path)).unwrap();
         let lib = libloading::Library::new(lib_path).unwrap();
         let func: libloading::Symbol<
-            unsafe extern "C" fn(
-                Vec<(String, String)>,
-            ) -> Result<Option<(String, String)>, &'a str>,
+            unsafe extern "C" fn(Vec<Token>) -> Result<Option<Token>, &'a str>,
         > = lib.get(func_name.as_bytes()).unwrap();
-        let tok: Token;
+        // let tok: Token;
         // println!("{:?}", args);
-        let raw_out = match func(args) {
+        let tok = match func(args) {
             Ok(Some(val)) => val,
             Ok(None) => return Ok(None),
             Err(error) => panic!("{:?}", error),
         };
-        match raw_out.1.as_str() {
-            "str" => tok = Token::Str(raw_out.0),
-            "symbol" => tok = Token::Symbol(raw_out.0),
-            "bool" => tok = Token::Bool(make_bool(&raw_out.0)),
-            "num" => tok = Token::Number(raw_out.0),
-            ty => panic!("you cant return the datatype, {}", ty),
-        };
+        // match raw_out.1.as_str() {
+        //     "str" => tok = Token::Str(raw_out.0),
+        //     "symbol" => tok = Token::Symbol(raw_out.0),
+        //     "bool" => tok = Token::Bool(make_bool(&raw_out.0)),
+        //     "num" => tok = Token::Number(raw_out.0),
+        //     ty => panic!("you cant return the datatype, {}", ty),
+        // };
 
         Ok(Some(tok))
     }
 }
 
-fn make_f_args(clay_in: Vec<Token>) -> Vec<(String, String)> {
-    let mut rust_args: Vec<(String, String)> = Vec::new();
-    for arg in clay_in.iter() {
-        match arg {
-            Token::Str(data) => rust_args.push((data.to_owned(), "str".to_string())),
-            Token::Number(data) => rust_args.push((data.to_owned(), "num".to_string())),
-            Token::Bool(data) => {
-                if data.to_owned() {
-                    rust_args.push(("t".to_string(), "bool".to_string()))
-                } else {
-                    rust_args.push(("nil".to_string(), "bool".to_string()))
-                }
-            }
-            Token::Form(_) => panic!("you can't pass Forms as arguments to external libs yet"),
-            Token::Symbol(_) => {
-                panic!("you can't pass Symbols as arguments to external libs yet")
-            }
-            _ => panic!("syntax error, make sure your arguments are formated corectly."),
-        }
-    }
-    return rust_args;
-}
+// fn make_f_args(clay_in: Vec<Token>) -> Vec<(String, String)> {
+//     let mut rust_args: Vec<(String, String)> = Vec::new();
+//     for arg in clay_in.iter() {
+//         match arg {
+//             Token::Str(data) => rust_args.push((data.to_owned(), "str".to_string())),
+//             Token::Number(data) => rust_args.push((data.to_owned(), "num".to_string())),
+//             Token::Bool(data) => {
+//                 if data.to_owned() {
+//                     rust_args.push(("t".to_string(), "bool".to_string()))
+//                 } else {
+//                     rust_args.push(("nil".to_string(), "bool".to_string()))
+//                 }
+//             }
+//             Token::Form(_) => panic!("you can't pass Forms as arguments to external libs yet"),
+//             Token::Symbol(_) => {
+//                 panic!("you can't pass Symbols as arguments to external libs yet")
+//             }
+//             _ => panic!("syntax error, make sure your arguments are formated corectly."),
+//         }
+//     }
+//     return rust_args;
+// }
 
 fn make_bool(input: &str) -> bool {
     match input {
