@@ -73,10 +73,10 @@ I mean much, better at dealing with large numbers.
 
 ### TODO:
 
-[ ] implement an import statement to add libraries to the current name space.
-[ ] test if C libraries can be imported.
-[ ] enable saving of byte code to a file.
-[x] compiled rust lib loading.
+* [ ] implement an import statement to add libraries to the current name space.
+* [ ] test if C libraries can be imported.
+* [ ] enable saving of byte code to a file.
+* [x] compiled rust lib loading.
 
 ### perpetual TODOs:
 
