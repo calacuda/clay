@@ -12,6 +12,7 @@ your path variable.
 on linux:
 ```
 $ > git clone https://github.com/calacuda/clay.git
+$ > git clone https://github.com/calacuda/clay_lib.git
 $ > cd clay
 $ > cargo build --release
 $ > cp /target/release/clay ~/.local/bin

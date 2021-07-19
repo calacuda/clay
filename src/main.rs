@@ -1,27 +1,27 @@
-use std::fs::read_to_string;
-use std::env;
-use std::io::stdin;
+use clay_lib::Token;
 use std::collections::HashMap;
+use std::env;
+use std::fs::read_to_string;
+use std::io::stdin;
 
-mod parser;
 mod bcc;
+mod parser;
 // mod iterpreter;
-mod std_lib;
 mod bci;
 mod lexer;
+mod std_lib;
 
 fn read_source(fname: &str) -> String {
     let mut cwd = env::current_dir().unwrap();
-    if fname.chars().next().unwrap() == '~' ||
-       fname.chars().next().unwrap() == '/' ||
-       fname.chars().next().unwrap() == '\\' {
+    if fname.chars().next().unwrap() == '~'
+        || fname.chars().next().unwrap() == '/'
+        || fname.chars().next().unwrap() == '\\'
+    {
         return read_to_string(fname).unwrap();
-    }
-    else {
+    } else {
         cwd.push(fname);
         return read_to_string(cwd).unwrap();
     }
-
 }
 
 fn _test_parser(parserd_sc: &Vec<parser::Node>) {
@@ -103,7 +103,7 @@ fn test_lexer(lex: &mut lexer::Lexer) {
         let tok = lex.get_token();
         println!("{:?}", tok);
         match tok {
-            lexer::Token::EOF => break,
+            Token::EOF => break,
             _ => {}
         }
     }
@@ -118,8 +118,8 @@ fn run(sc_name: String, test_mode: bool) {
         println!();
     }
 
-    let parsed = parser::parse(&scf);  //
-    let stdlib = std_lib::get_std_funcs();  //
+    let parsed = parser::parse(&scf); //
+    let stdlib = std_lib::get_std_funcs(); //
 
     if test_mode {
         // _test_parser(&parsed);
@@ -142,7 +142,6 @@ fn run(sc_name: String, test_mode: bool) {
 }
 
 fn _repl() -> String {
-
     println!("clay > ");
     let mut input = String::new();
     let stdlib = std_lib::get_std_funcs();

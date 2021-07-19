@@ -2,18 +2,19 @@
 takes the parsed code outputs bytecode.
 */
 
+// use crate::lexer;
 use crate::parser;
-use crate::lexer;
-use crate::lexer::Token;
+// use crate::lexer::Token;
+use clay_lib::Token;
 // use crate::std_lib;
 
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub enum Bytecode {
     //Stack stuff
-    Push(lexer::Token), // pushes a const to the stack
+    Push(Token), // pushes a const to the stack
 
     //Binary math
     BinAdd,
@@ -33,18 +34,18 @@ pub enum Bytecode {
     LogNot,
 
     //Names
-    StoreName(lexer::Token),
-    LoadName(lexer::Token),
+    StoreName(Token),
+    LoadName(Token),
 
     //Functions
     CallFunc(usize),
     MakeFunc(usize),
-    LoadFunc(lexer::Token),
+    LoadFunc(Token),
 
     //fLoW cOnTrOl
     JumpIfTrue(usize),
     Jump(usize), // could be done with "Push True" then "JumpIfTrue" but I too tierd to
-                       // figure out the mechanics of that.
+                 // figure out the mechanics of that.
 }
 
 #[derive(Debug, Clone)]
@@ -121,11 +122,17 @@ pub enum Nargs {
 //     return code;
 // }
 
-fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
-                         user_funcs: &HashSet<String>,
-                         stdlib: &HashMap<&'input str, (Nargs, &'input
-                         (dyn Fn(&Vec<Token>) ->
-                         Result<Option<Token>, &'input str>))>) -> Vec<Bytecode> {
+fn _get_bytecode<'input>(
+    parsed: Vec<parser::Node>,
+    user_funcs: &HashSet<String>,
+    stdlib: &HashMap<
+        &'input str,
+        (
+            Nargs,
+            &'input (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'input str>),
+        ),
+    >,
+) -> Vec<Bytecode> {
     let mut gen_funcs = Vec::new();
     let mut code = Vec::new();
     // println!("\ndat:{:?}", user_funcs);
@@ -135,38 +142,51 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
     for node in parsed.iter() {
         // println!("node data: {:?}", node.data);
         match &node.data {
-            Some(lexer::Token::Symbol(sym)) if (sym == &"+") | (sym == &"*") |
-	                                       (sym == &"/") | (sym == &"-") => { // math operators.
+            Some(Token::Symbol(sym))
+                if (sym == &"+") | (sym == &"*") | (sym == &"/") | (sym == &"-") =>
+            {
+                // math operators.
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
                 match &node.data {
-                    Some(lexer::Token::Symbol(sym)) if sym == &"+" => code.push(Bytecode::BinAdd),
-                    Some(lexer::Token::Symbol(sym)) if sym == &"*" => code.push(Bytecode::BinMul),
-                    Some(lexer::Token::Symbol(sym)) if sym == &"-" => code.push(Bytecode::BinSub),
-                    Some(lexer::Token::Symbol(sym)) if sym == &"/" => code.push(Bytecode::BinDiv),
-                    _ => {},
+                    Some(Token::Symbol(sym)) if sym == &"+" => code.push(Bytecode::BinAdd),
+                    Some(Token::Symbol(sym)) if sym == &"*" => code.push(Bytecode::BinMul),
+                    Some(Token::Symbol(sym)) if sym == &"-" => code.push(Bytecode::BinSub),
+                    Some(Token::Symbol(sym)) if sym == &"/" => code.push(Bytecode::BinDiv),
+                    _ => {}
                 }
             }
 
-            Some(lexer::Token::Symbol(sym)) if (sym == &"<") | (sym == &">") | (sym == &">=") | (sym == &"<=") |
-	                                       (sym == &"=") | (sym == &"!=") => { // comparisons
+            Some(Token::Symbol(sym))
+                if (sym == &"<")
+                    | (sym == &">")
+                    | (sym == &">=")
+                    | (sym == &"<=")
+                    | (sym == &"=")
+                    | (sym == &"!=") =>
+            {
+                // comparisons
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
                 match &node.data {
-                    Some(lexer::Token::Symbol(sym)) if sym == &"<" => code.push(Bytecode::BinLess),
-                    Some(lexer::Token::Symbol(sym)) if sym == &">" => code.push(Bytecode::BinGrtr),
-                    Some(lexer::Token::Symbol(sym)) if sym == &">=" => panic!("greater then or equal to is not implemented yet"), // code.push(Bytecode::),
-                    Some(lexer::Token::Symbol(sym)) if sym == &"<=" => panic!("less then or equal to is not implemented yet"), // code.push(Bytecode::),
-                    Some(lexer::Token::Symbol(sym)) if sym == &"=" => code.push(Bytecode::BinEqu),
-                    Some(lexer::Token::Symbol(sym)) if sym == &"!=" => {
+                    Some(Token::Symbol(sym)) if sym == &"<" => code.push(Bytecode::BinLess),
+                    Some(Token::Symbol(sym)) if sym == &">" => code.push(Bytecode::BinGrtr),
+                    Some(Token::Symbol(sym)) if sym == &">=" => {
+                        panic!("greater then or equal to is not implemented yet")
+                    } // code.push(Bytecode::),
+                    Some(Token::Symbol(sym)) if sym == &"<=" => {
+                        panic!("less then or equal to is not implemented yet")
+                    } // code.push(Bytecode::),
+                    Some(Token::Symbol(sym)) if sym == &"=" => code.push(Bytecode::BinEqu),
+                    Some(Token::Symbol(sym)) if sym == &"!=" => {
                         code.push(Bytecode::BinEqu);
                         code.push(Bytecode::LogNot);
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == &"defun" => {
+            Some(Token::Symbol(sym)) if sym == &"defun" => {
                 gen_funcs.push(node.children[0].data.clone().unwrap());
                 // dat.add_func(node.children[0].data.clone().unwrap());
 
@@ -180,14 +200,15 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
 
                     // println!("node.children[1].data:  {:?}", node.children[1].data);
 
-                    for child in &node.children[1].children {  // the rest of the params.
+                    for child in &node.children[1].children {
+                        // the rest of the params.
                         code.push(Bytecode::StoreName(child.data.clone().unwrap()));
                     }
                     code.push(Bytecode::MakeFunc(node.children[1].children.len() + 1)); // makes the function
 
-                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap())); // stores function
-                }
-                else {
+                    code.push(Bytecode::StoreName(node.children[0].data.clone().unwrap()));
+                // stores function
+                } else {
                     let mut bcode = _get_bytecode(node.children[1..].to_vec(), user_funcs, stdlib);
                     code.append(&mut bcode);
 
@@ -197,16 +218,15 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                     // for child in &node.children[0].children {
                     //     code.push(Bytecode::StoreName(child.data.clone().unwrap()));
                     // }
-
-
                 }
 
                 //break;
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == &"if" => {
+            Some(Token::Symbol(sym)) if sym == &"if" => {
                 // code.push(Bytecode::Block("CONDITION_BLOCK")); // uncomment if conditional are broken
-                let mut cond_bcode = _get_bytecode(vec![node.children[0].clone()], user_funcs, stdlib);
+                let mut cond_bcode =
+                    _get_bytecode(vec![node.children[0].clone()], user_funcs, stdlib);
                 // let distance = bcode.len();
                 // println!("if block bytecode {:?}", bcode);
 
@@ -222,16 +242,16 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 let mut bcode = _get_bytecode(vec![node.children[2].clone()], user_funcs, stdlib);
                 code.push(Bytecode::Jump(bcode.len()));
                 code.append(&mut bcode); // the else block
-                // code.push(Bytecode::Block("END_IF"));
+                                         // code.push(Bytecode::Block("END_IF"));
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == &"return" => {
+            Some(Token::Symbol(sym)) if sym == &"return" => {
                 let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 code.append(&mut bcode);
                 break;
             }
 
-            Some(lexer::Token::Symbol(sym)) if sym == &"let" => {
+            Some(Token::Symbol(sym)) if sym == &"let" => {
                 // let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                 // // code.append(&mut bcode);
                 // println!("\nlet begin:");
@@ -242,14 +262,16 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 for child in node.children.clone() {
                     if child.children.len() < 1 {
                         match child.data {
-                            Some(lexer::Token::Symbol(var_name)) => panic!("ERROR: variable \"{}\" needs a value", var_name),
-                            Some(lexer::Token::EOF) => panic!("ERROR: unexpected EOF"),
-                            Some(lexer::Token::LParen |
-                                 lexer::Token::RParen) => panic!("ERROR: unexpected parenthesis"),
-                            Some(lexer::Token::Str(_) |
-                                 lexer::Token::Bool(_) |
-                                 lexer::Token::Form(_) |
-                                 lexer::Token::Number(_)) =>  panic!("ERROR: can't use data as a variable name"),
+                            Some(Token::Symbol(var_name)) => {
+                                panic!("ERROR: variable \"{}\" needs a value", var_name)
+                            }
+                            Some(Token::EOF) => panic!("ERROR: unexpected EOF"),
+                            Some(Token::LParen | Token::RParen) => {
+                                panic!("ERROR: unexpected parenthesis")
+                            }
+                            Some(
+                                Token::Str(_) | Token::Bool(_) | Token::Form(_) | Token::Number(_),
+                            ) => panic!("ERROR: can't use data as a variable name"),
                             None => panic!("can't read variable name"),
                         }
                     }
@@ -259,7 +281,7 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 }
             }
 
-            Some(lexer::Token::Symbol(name)) => {
+            Some(Token::Symbol(name)) => {
                 //println!("ERROR: generic symbol detected, fix yo broken code!");
                 // let mut bcode = _get_bytecode(node.children.clone(), user_funcs);
                 // code.append(&mut bcode);
@@ -268,58 +290,56 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
                 //     code.push(Bytecode::CallFunc);
                 // }
                 //println!("name: {}, {}", name, stdlib.contains_key(name));
-                if user_funcs.contains(&name.to_string()){
+                if user_funcs.contains(&name.to_string()) {
                     code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
                     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                     code.append(&mut bcode);
                     code.push(Bytecode::CallFunc(node.children.len()));
-                }
-                else if stdlib.contains_key(&name.as_ref())  {
+                } else if stdlib.contains_key(&name.as_ref()) {
                     let nargs = node.children.len();
                     match stdlib.get(&name.as_ref()).unwrap().0 {
                         Nargs::Num(num) => {
                             if nargs == num {
                                 code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
-                                let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
+                                let mut bcode =
+                                    _get_bytecode(node.children.clone(), user_funcs, stdlib);
                                 code.append(&mut bcode);
                                 code.push(Bytecode::CallFunc(node.children.len()));
-                            }
-                            else {
-                                panic!("wrong number of arguments fed to the function: \"{}\"", name);
+                            } else {
+                                panic!(
+                                    "wrong number of arguments fed to the function: \"{}\"",
+                                    name
+                                );
                             }
                         }
 
                         Nargs::INF => {
                             code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
-                            let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
+                            let mut bcode =
+                                _get_bytecode(node.children.clone(), user_funcs, stdlib);
                             code.append(&mut bcode);
                             code.push(Bytecode::CallFunc(node.children.len()));
-                        }
-
-                        // _ => {
-                        //     code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
-                        //     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
-                        //     code.append(&mut bcode);
-                        //     code.push(Bytecode::CallFunc(node.children.len()));
-                        // }
+                        } // _ => {
+                          //     code.push(Bytecode::LoadFunc(node.data.clone().unwrap()));
+                          //     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
+                          //     code.append(&mut bcode);
+                          //     code.push(Bytecode::CallFunc(node.children.len()));
+                          // }
                     }
-                }
-                else {
+                } else {
                     let mut bcode = _get_bytecode(node.children.clone(), user_funcs, stdlib);
                     code.append(&mut bcode);
                     // println!("adding LoadName(\"{}\"), from children: {:?}", name, node.children);
                     // println!("");
-                    code.push(Bytecode::LoadName(lexer::Token::Symbol(name.to_owned())));
+                    code.push(Bytecode::LoadName(Token::Symbol(name.to_owned())));
                 }
             }
 
-            Some(lexer::Token::Number(_)) |
-            Some(lexer::Token::Bool(_)) |
-            Some(lexer::Token::Str(_)) => {
+            Some(Token::Number(_)) | Some(Token::Bool(_)) | Some(Token::Str(_)) => {
                 code.push(Bytecode::Push(node.data.clone().unwrap()));
                 // break;
             }
-            Some(lexer::Token::Form(_)) => code.push(Bytecode::Push(node.data.clone().unwrap())),
+            Some(Token::Form(_)) => code.push(Bytecode::Push(node.data.clone().unwrap())),
             _ => {
                 println!("{:?}", node.data);
                 panic!("ERROR: you should not be seeing this.");
@@ -329,14 +349,14 @@ fn _get_bytecode<'input>(parsed: Vec<parser::Node>,
     return code;
 }
 
-fn _get_user_funcs<'input>(parsed: &Vec<parser::Node>) -> HashSet<String>{
+fn _get_user_funcs<'input>(parsed: &Vec<parser::Node>) -> HashSet<String> {
     let mut user_funcs = HashSet::new();
 
     for globe in parsed.iter() {
         match &globe.data {
-            Some(lexer::Token::Symbol(sym)) if sym == "defun" => {
+            Some(Token::Symbol(sym)) if sym == "defun" => {
                 match &globe.children[0].data {
-                    Some(lexer::Token::Symbol(func_name)) => user_funcs.insert(func_name.to_string()),
+                    Some(Token::Symbol(func_name)) => user_funcs.insert(func_name.to_string()),
                     _ => panic!("ERROR: no function name after function declaration."),
                 };
             }
@@ -367,11 +387,17 @@ fn _get_user_funcs<'input>(parsed: &Vec<parser::Node>) -> HashSet<String>{
 //     return user_funcs;
 // }
 
-pub fn get_bytecode<'input>(parsed: &Vec<parser::Node>,
-                            stdlib: &HashMap<&'input str, (Nargs, &'input
-                                    (dyn Fn(&Vec<Token>) ->
-                                    Result<Option<Token>, &'input str>))>)
-                                    -> Vec<Vec<Bytecode>> { //-> Vec<Statments> {
+pub fn get_bytecode<'input>(
+    parsed: &Vec<parser::Node>,
+    stdlib: &HashMap<
+        &'input str,
+        (
+            Nargs,
+            &'input (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'input str>),
+        ),
+    >,
+) -> Vec<Vec<Bytecode>> {
+    //-> Vec<Statments> {
     /*
     returns a vector of instructions to execute.
     this is interpreted later.

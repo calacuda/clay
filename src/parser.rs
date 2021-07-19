@@ -3,6 +3,7 @@
 */
 
 use crate::lexer;
+use clay_lib::Token;
 // use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -10,7 +11,7 @@ pub struct Node {
     pub parent_id: Option<NodeID>,
     pub id: NodeID,
     pub children: Vec<Node>,
-    pub data: Option<lexer::Token>,
+    pub data: Option<Token>,
     // pub bytecode: Vec<Bytecode<'arb>>,
 }
 
@@ -40,7 +41,7 @@ impl<'arb> Node {
         return self;
     }
 
-    pub fn add_data(mut self, data: lexer::Token) -> Node {
+    pub fn add_data(mut self, data: Token) -> Node {
         self.data = Some(data);
         return self;
     }
@@ -64,8 +65,8 @@ impl NodeID {
     }
 }
 
-fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, uid: usize,
-                last_paren: char) -> (Vec<Node>, Vec<Node>, lexer::Token, (usize, usize)) { // id = id for the node.
+fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: Token, pid: usize, uid: usize,
+                last_paren: char) -> (Vec<Node>, Vec<Node>, Token, (usize, usize)) { // id = id for the node.
     /*
      * this is a big, scarry, recurive function, with a loop in it. aka it's the two things
      * that should NEVER be used together. bassically it recurses though the source code based on
@@ -102,7 +103,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, u
         // println!("{:?}", tok);
 
         match tok {
-            lexer::Token::LParen => {
+            Token::LParen => {
                 // lp += 1;
                 // if next_tok == lexer::Token::RParen {
                 //     // println!("reasigning next_tok");
@@ -111,7 +112,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, u
                 //     // break;
                 // }
 
-                if next_tok != lexer::Token::RParen {
+                if next_tok != Token::RParen {
                     // println!("added {:?} to node", next_tok);
                     node = node.add_data(next_tok);
                     u_id += 1;
@@ -129,7 +130,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, u
                     created_ids.push(tmp_node);
                     lp += p_count.0 + 1;
                     rp += p_count.1;
-                    if nt_cp == lexer::Token::EOF {
+                    if nt_cp == Token::EOF {
                         rp = 0;
                         lp = 0;
                     }
@@ -141,7 +142,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, u
                 }
             }
 
-            lexer::Token::RParen => {
+            Token::RParen => {
                 rp += 1;
                 tok = nt_cp;
                 u_id += 1;
@@ -152,11 +153,11 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, u
                 break;
             }
 
-            lexer::Token::Symbol(_) |
-            lexer::Token::Number(_) |
-            lexer::Token::Bool(_) |
-            lexer::Token::Form(_) |
-            lexer::Token::Str(_) => {
+            Token::Symbol(_) |
+            Token::Number(_) |
+            Token::Bool(_) |
+            Token::Form(_) |
+            Token::Str(_) => {
                 // println!("added {:?} to node", tok);
                 node = node.add_data(tok).set_parent(NodeID::new(pid));
                 let tmp_node = node.clone();
@@ -166,7 +167,7 @@ fn _parse<'arb>(lex: &mut lexer::Lexer<'arb>, token: lexer::Token, pid: usize, u
                 u_id += 1;
             }
 
-            lexer::Token::EOF => {
+            Token::EOF => {
                 u_id += 1;
                 // println!("{:?}, {:?}", tok, nt_cp);
                 tok = nt_cp;
