@@ -63,6 +63,12 @@ impl NodeID {
     }
 }
 
+// fn import<'arb>(libs: Token) -> Vec<Node> {
+//     let mut nodes: Vec<Node> = Vec::new();
+//
+//     return nodes;
+// }
+
 fn _parse<'arb>(
     lex: &mut lexer::Lexer<'arb>,
     token: Token,
@@ -195,5 +201,9 @@ pub fn parse(source_code: &String) -> Vec<Node> {
     let u_id = lex.pos;
     let (_, mut nodes, _, _) = _parse(&mut lex, next_tok, 0, u_id, 'l');
     nodes.sort_by_key(|d| d.id.index);
+    // let mut imports = match nodes[0].data {
+    //     Some(Token::Symbol(sym)) if sym == "import" => import(nodes[0].children),
+    //     _ => Vec::new(),
+    // }
     return nodes;
 }

@@ -5,11 +5,10 @@ will print with out the space in between the tokens.
 */
 
 // use crate::bcc;
-use crate::bcc::Nargs;
 // use crate::lexer;
 // use crate::lexer::Token;
 // use crate::parser;
-use clay_lib::Token;
+use clay_lib::{Nargs, Token};
 
 use std::collections::HashMap;
 // use std::collections::HashSet;

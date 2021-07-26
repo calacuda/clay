@@ -1,3 +1,3 @@
-(write-line (from "libdoodoo_lib.so" `(doodoo_func)))
+(write-line (from "libdoodoo_lib.so" `(func_1)))
 (terpri)
 (write-line (from "libdoodoo_lib.so" `(func_2 "Houston, we have no problems with function arguments")))

@@ -30,7 +30,7 @@ pub struct Lexer<'input> {
 fn is_valid_in_symbol(c: char) -> bool {
     c.is_alphabetic()
         || match c {
-            '+' | '-' | '*' | '/' | '#' | '<' | '>' | '=' | '"' | '_' => true,
+            '+' | '-' | '*' | '/' | '#' | '<' | '>' | '=' | '"' | '_' | ':' => true,
             _ => false,
         }
 }

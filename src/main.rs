@@ -1,5 +1,5 @@
 use clay_lib::Token;
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::io::stdin;
@@ -109,7 +109,7 @@ fn test_lexer(lex: &mut lexer::Lexer) {
     }
 }
 
-fn run(sc_name: String, test_mode: bool) {
+fn precomp_run(sc_name: String, test_mode: bool) {
     let scf = read_source(&sc_name);
 
     if test_mode {
@@ -139,6 +139,41 @@ fn run(sc_name: String, test_mode: bool) {
         println!("=========================");
     }
     bci::do_the_things(&bytecode, &stdlib); //
+}
+
+fn jit_run(sc_name: String, test_mode: bool) {
+    let scf = read_source(&sc_name);
+
+    if test_mode {
+        let mut lex = lexer::Lexer::new(&scf);
+        test_lexer(&mut lex);
+        println!();
+    }
+
+    let ast = parser::parse(&scf); //
+    let stdlib = std_lib::get_std_funcs(); //
+
+    if test_mode {
+        // _test_parser(&parsed);
+        // _test_parser2(&parsed[0]);
+        _test_parser3(&ast);
+        // println!();
+    }
+    if test_mode {
+        let bytecode = bcc::get_bytecode(&ast, &stdlib); //
+        println!("{}\n", scf);
+        pp_bytecode(&bytecode);
+        println!();
+        println!(" program out put bellow: ");
+        println!("   i                i    ");
+        println!("  \\ /              \\ /    ");
+        println!("   V                V    ");
+        println!("=========================");
+    }
+
+    // bci::do_the_things(&bytecode, &stdlib);
+    // println!("{:#?}", ast[0].data);
+    bci::jit_run(&ast, &stdlib);
 }
 
 fn _repl() -> String {
@@ -173,6 +208,24 @@ fn repl() {
     }
 }
 
+fn run(args: Vec<String>, jit: bool) {
+    // let mut func = precomp_run;
+    let mut test_mode = false;
+    let mut sc_file = String::new();
+    for arg in args {
+        if arg == "-test" {
+            test_mode = true;
+        } else if arg != "-test" {
+            sc_file = arg;
+        }
+    }
+    if jit {
+        jit_run(sc_file, test_mode);
+    } else {
+        precomp_run(sc_file, test_mode);
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let args = args[1..].to_vec();
@@ -187,17 +240,34 @@ fn main() {
     //     let bytecode = bcc::get_bytecode(&parsed, &stdlib);
     //     bci::do_the_things(bytecode, &stdlib);
     // }
+
+    // if args.len() == 0 {
+    //     repl();
+    //     return;
+    // } else if args.len() > 1 {
+    //     for arg in args {
+    //         if arg != "-test" {
+    //             // println!("{}", arg);
+    //             run(arg, true);
+    //         }
+    //     }
+    // } else {
+    //     // run(args[0].clone(), false);
+    //     jit_run(args[0].clone(), false);
+    // }
+
     if args.len() == 0 {
         repl();
         return;
-    } else if args.len() > 1 {
-        for arg in args {
-            if arg != "--test" {
-                println!("{}", arg);
-                run(arg, true);
-            }
-        }
+    }
+    // let test_mode = args.contains(&"-test".to_string());
+    if args[0].to_lowercase() == "jit" {
+        run(args[1..].to_vec(), true);
+    } else if args[0].to_lowercase() == "precomp" {
+        run(args[1..].to_vec(), false);
+    } else if args[0].to_lowercase() == "normal" {
+        run(args[1..].to_vec(), false);
     } else {
-        run(args[0].clone(), false);
+        run(args, false);
     }
 }
