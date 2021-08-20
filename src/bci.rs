@@ -105,6 +105,37 @@ impl<'foobar> RawFunc {
     // }
 }
 
+// fn user_names_get<'a>(
+//     call_name: &String,
+//     user_names: &mut HashMap<String, StackData>,
+// ) -> (bool, Option<StackData>) {
+//     // let mut contains: bool = false;
+//     // let mut contents: Option<StackData> = None;
+//
+//     // for hmap in user_names {
+//     //     match hmap.get(key) {
+//     //         Some(sdata) => return (true, Some(sdata.to_owned())),
+//     //         None => {}
+//     //     }
+//     // }
+//     // return (false, None);
+//
+//     let (lib_name, func_name) = get_lib_name(call_name);
+//     println!("name_spaces :  {:?}", user_names.keys());
+//     println!("lib_name :  {:?}", lib_name);
+//     // println!("name space test :  {:?}", user_names.get("test"));
+//     let lib = match user_names.get(&lib_name) {
+//         Some(thing) => thing,
+//         None => return (false, None), // panic!("\"{}\" is not a known name space!", lib_name),
+//     };
+//     let func = match lib.get(&func_name) {
+//         Some(sdata) => (true, Some(sdata.to_owned())),
+//         None => (false, None),
+//         // None => panic!("\"{}\" is not found within the \"{}\" name space.", func_name, lib_name),
+//     };
+//     return func;
+// }
+
 fn get_params<'a>(
     // nargs: usize,
     stack: &mut Vec<StackData>,
@@ -151,7 +182,7 @@ fn get_params<'a>(
 
             Some(StackData::RawFunc(f)) => {
                 // println!("encountered a raw function fname :  {}", f.name);
-                match user_names.clone().get(&f.name) {
+                match user_names.get(&f.name) {
                     Some(StackData::RawFunc(_raw_func)) => {
                         // println!("f.name :  {:?}", f.name);
                         let (_thing, _thing2) = make_user_funcs(
@@ -164,6 +195,9 @@ fn get_params<'a>(
                         );
                         // println!("{:?}", _thing);
                     }
+
+                    None => panic!("found a raw_func but couldn't retrive if from user_names."),
+
                     _ => {
                         // println!("{:?}", f);
                         panic!("temp text.")
@@ -229,47 +263,45 @@ fn call_func<'a>(
 ) {
     // println!("envrnmt: {:?}", envrnmt);
     // println!("user_names: {:?}", user_names.keys());
+    // println!("stack :  {:?}", stack);
+    // print!("get_params ");
     let (func_name, mut params) = get_params(stack, user_names, envrnmt, stdlib);
+    // print!("\n\n");
     // println!("params :  {:?}", params);
-    // let needs_comp = match user_names.get(&func_name) {
-    //     None => false,
-    //     Some(StackData::RawFunc(_)) => true,
-    //     _ => false,
-    // };
-    // // println!("needs_comp :  {:?}", needs_comp);
-    // // println!("stack :  {:?}", stack);
 
-    // let g_block;
-    // g_block = match user_names.get(&func_name) {
-    //     Some(StackData::RawFunc(f)) => {
-    //         make_user_funcs(&f.root_node.clone(), stack, envrnmt, user_names, stdlib);
-    //     }
-    //     _ => panic!("temp text."),
-    // };
+    if user_names.contains_key(&func_name) {
+        // println!("calling function: {:?}", func_name);
+        // let func_details = working_user_name.get(func_name.as_str()).unwrap();
+        let func;
+        // let wun = user_names.clone();
+        let data = user_names.get(&func_name).unwrap().clone();
+        match data {
+            StackData::Func(f) => {
+                func = f.clone();
+                // println!("call_func params: {:?}", params);
+                let mut envrnmt = make_args(params.clone(), &func.params);
+                // let mut envrnmt = HashMap::new();
+                // envrnmt.insert(String::new(), en);
+                // println!("call_func envrnmt: {:?}", envrnmt);
+                // let nargs = match f.nargs {
+                //     Nargs::INF => {15},
+                //     Nargs::Num(num) => num,
+                // };
+                // println!("envrnmt: {:?}", envrnmt);
+                // call_func(nargs, stack, &envrnmt, user_names, stdlib);
+                do_the_thing(&f.code, stack, &mut envrnmt, user_names, stdlib, true);
+            }
+            _ => {
+                println!("func_name: \"{}\" was not called", func_name);
+                // println!("data: {:?} triggered an ERROR", data);
+                println!("user_names keys :  {:?}", user_names.keys());
+                panic!("func not called");
+            }
+        }
 
-    // let (_, func_name) = make_user_funcs(&g_block, stack, envrnmt, user_names, stdlib);
-
-    // println!("call_func stack: {:?}", stack);
-    // println!("call_func func_name: {:?}", func_name);
-    // println!("call_func params: {:?}", params);
-
-    // println!("call_func u_names: {:?}", user_names);
-    // let working_user_names = user_names.clone();
-    // println!("user_names keys :  {:?}", user_names.keys());
-    // println!("func name :  {:?}", func_name);
-
-    // if uncomp_func.contains_key(&func_name) {
-    //     function_com(
-    //         &mut bcc::get_bc_jit(uncomp_func.remove(&func_name).unwrap(), user_names, stdlib),
-    //         stack,
-    //         uncomp_func,
-    //         envrnmt,
-    //         user_names,
-    //         stdlib,
-    //     )
-    // }
-
-    if stdlib.contains_key(&func_name.as_ref()) {
+        // let env = make_args(params, func.params);
+        // println!("func_details: {:?}", func_details);
+    } else if stdlib.contains_key(&func_name.as_ref()) {
         // println!("f {}", f);
         let func_details = stdlib.get(&func_name.as_ref());
         match func_details.unwrap().0 {
@@ -288,36 +320,6 @@ fn call_func<'a>(
             Err(_) => {} // Err(mesg) => panic!(mesg),
         }
         return;
-    } else if user_names.contains_key(func_name.as_str()) {
-        // println!("calling function: {:?}", func_name);
-        // let func_details = working_user_name.get(func_name.as_str()).unwrap();
-        let func;
-        // let wun = user_names.clone();
-        let data = user_names.get(func_name.as_str()).unwrap().clone();
-        match data {
-            StackData::Func(f) => {
-                func = f.clone();
-                // println!("call_func params: {:?}", params);
-                let mut envrnmt = make_args(params.clone(), &func.params);
-                // println!("call_func envrnmt: {:?}", envrnmt);
-                // let nargs = match f.nargs {
-                //     Nargs::INF => {15},
-                //     Nargs::Num(num) => num,
-                // };
-                // println!("envrnmt: {:?}", envrnmt);
-                // call_func(nargs, stack, &envrnmt, user_names, stdlib);
-                do_the_thing(&f.code, stack, &mut envrnmt, user_names, stdlib, true);
-            }
-            _ => {
-                println!("func_name: \"{}\" was not called", func_name);
-                // println!("data: {:?} triggered an ERROR", data);
-                println!("user_names: {:?}", user_names.keys());
-                panic!("func not called");
-            }
-        }
-
-        // let env = make_args(params, func.params);
-        // println!("func_details: {:?}", func_details);
     } else {
         panic!("function not found");
     }
@@ -440,6 +442,7 @@ fn store_name<'a>(
     //     _ => println!("tmp_var: {:?}", tmp_var),
     // }
     // match name
+    // let (lib_name, func_name) = get_lib_name(&name.to_string());
     name_space.insert(name.to_string(), tmp_var);
 }
 
@@ -511,8 +514,8 @@ fn do_the_thing<'a>(
                 // println!("func: {:?}", func);
                 match func_tok {
                     Token::Symbol(func_name) => {
-                        if user_names.contains_key(func_name.as_str()) {
-                            stack.push(user_names.get(func_name.as_str()).unwrap().clone());
+                        if user_names.contains_key(func_name) {
+                            stack.push(user_names.get(func_name).unwrap().clone());
                         } else if stdlib.contains_key(func_name.as_str()) {
                             stack.push(StackData::StdFunc(func_tok.clone()));
                         } else {
@@ -545,12 +548,14 @@ fn do_the_thing<'a>(
                 //     function_com(&mut bc, stack, uncomp_func, envrnmt, user_names, stdlib)
                 // }
 
+                // FLAG: OPTIMIZE
+
                 let value = if envrnmt.contains_key(name) {
                     envrnmt.get(name)
                 } else if user_names.contains_key(name) {
                     user_names.get(name)
                 } else {
-                    println!("user_names :  {:?}", user_names.keys());
+                    println!("user_names keys :  {:?}", user_names.keys());
                     panic!("I don't of this: \"{}\" you speak of.", name)
                 };
 
@@ -701,6 +706,7 @@ pub fn do_the_things<'a>(
     let mut stack: Vec<StackData> = Vec::new();
     let mut user_names: HashMap<String, StackData> = HashMap::new();
     let mut envrnmt: HashMap<String, StackData> = HashMap::new();
+
     // let mut g_block_clone: Vec<Bytecode>;
     let mut uncomp_func: HashMap<String, &Node> = HashMap::new();
     let funcs: HashSet<String> = HashSet::new();
@@ -800,7 +806,9 @@ fn import_comp_rust<'a>(
                 ),
             >,
         > = lib.get("get_funcs".as_bytes()).unwrap();
-        return get_funcs();
+        let funcs = get_funcs();
+        println!("{:?}", funcs.keys());
+        return funcs;
     }
 }
 
@@ -808,16 +816,16 @@ fn not_yet_compiled<'a>(
     // block: &'a Node,
     things: &'a Vec<Node>,
     user_names: &mut HashMap<String, StackData>,
-    name_mod: String,
+    // name_mod: String,
     // uncomp_func: &'a HashMap<String, &'a Node>,
 ) -> (
-    HashMap<String, &'a Node>,
+    HashMap<String, StackData>,
     HashMap<String, &'a Node>,
     HashSet<String>,
 ) {
-    let mut raw_func: HashMap<String, &Node> = HashMap::new();
-    let mut imports: HashMap<String, &Node> = HashMap::new();
-    let mut funcs: HashSet<String> = HashSet::new();
+    let mut _raw_funcs: HashMap<String, StackData> = HashMap::new();
+    let mut _imports: HashMap<String, &Node> = HashMap::new();
+    let mut _funcs: HashSet<String> = HashSet::new();
     for block in things {
         match &block.data {
             Some(Token::Symbol(defun)) if defun == "defun" => {
@@ -832,23 +840,25 @@ fn not_yet_compiled<'a>(
                 f.name = fname.to_owned();
                 user_names.insert(
                     fname.to_owned(),
-                    // format!("{}{}", name_mod, fname.to_owned()),
                     StackData::RawFunc(f),
+                    // format!("{}{}", name_mod, fname.to_owned()),
                 );
             }
             Some(Token::Symbol(import)) if import == "import" => {
                 let lib_paths = find_libs(block.children[0].data.as_ref());
                 // println!("{:?}", lib_paths);
-                for (name, path) in lib_paths {
+                for (_name, path) in lib_paths {
                     match read_to_string(&path) {
                         Ok(source_code) => {
                             let ast = parser::parse(&source_code);
                             // not_yet_compiled(&ast, user_names, format!("{}::", name));
-                            not_yet_compiled(&ast, user_names, name);
+                            not_yet_compiled(&ast, user_names);
                         }
 
                         Err(_) => {
                             let funcs = import_comp_rust(path);
+                            println!("compiled functions :  {:?}", funcs.keys());
+                            // add to some name space
                         }
                     }
                 } // make this arm work
@@ -857,7 +867,7 @@ fn not_yet_compiled<'a>(
             _ => {}
         }
     }
-    return (raw_func, imports, funcs);
+    return (_raw_funcs, _imports, _funcs);
 }
 
 // fn jit_call<'a>(
@@ -928,6 +938,7 @@ fn make_user_funcs<'a>(
     // func.params = params;
     let func_name = match &uncomp_thing.children[0].data {
         Some(Token::Symbol(sym)) => {
+            // let (lib_name, func_name) = get_lib_name(sym);
             let mut bc = bcc::get_bc_jit(uncomp_thing, user_names, stdlib);
             // let mut tmp_user_names: HashMap<String, StackData> = HashMap::new();
             function_com(&mut bc, stack, envrnmt, user_names, stdlib); // function_comp adds the function to user_names
@@ -947,6 +958,17 @@ fn make_user_funcs<'a>(
     );
 }
 
+// fn get_lib_name(raw_name: &String) -> (String, String) {
+//     let split_lib_name = raw_name.split("::").collect::<Vec<&str>>();
+//     if split_lib_name.len() == 1 {
+//         return (String::new(), raw_name.to_owned());
+//     } else if split_lib_name.len() == 2 {
+//         return (split_lib_name[0].to_string(), split_lib_name[1].to_string());
+//     } else {
+//         panic!("too many seperators");
+//     }
+// }
+
 pub fn jit_run<'a>(
     things: &'a Vec<Node>,
     stdlib: &'a HashMap<
@@ -958,13 +980,13 @@ pub fn jit_run<'a>(
     >,
 ) {
     let mut stack: Vec<StackData> = Vec::new();
-    let mut user_names: HashMap<String, StackData> = HashMap::new();
     let mut envrnmt: HashMap<String, StackData> = HashMap::new();
+    let mut user_names: HashMap<String, StackData> = HashMap::new();
+
     // let mut uncomp_func: HashMap<String, &Node> = HashMap::new();
     // parser
 
-    let (mut _uncomp_stuff, _imports, mut _funcs) =
-        not_yet_compiled(things, &mut user_names, String::new());
+    let (mut _uncomp_stuff, _imports, mut _funcs) = not_yet_compiled(things, &mut user_names);
     // println!("not compiled :  {:?}", uncomp_stuff);
 
     for g_block in things {
@@ -980,6 +1002,7 @@ pub fn jit_run<'a>(
                 //     &mut user_names,
                 //     stdlib,
                 // );
+                // let (lib, fname) = get_lib_name(s);
                 let bc = bcc::get_bc_jit(g_block, &mut user_names, stdlib);
                 do_the_thing(
                     &bc,
