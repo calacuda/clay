@@ -16,11 +16,13 @@ def get_exe():
     if os.path.isfile("target/release/clay"):
         exe = "target/release/clay"
     elif os.path.isfile("target/debug/clay"):
-        os.system("cargo build")
         exe = "target/debug/clay"
     else:
-        print("ERROR: no executable found, please compile")
-        sys.exit()
+        print("compileing...")
+        os.system("cargo build")
+        exe = "target/debug/clay"
+        #print("ERROR: no executable found, please compile")
+        #sys.exit()
     return exe
 
 
@@ -46,7 +48,7 @@ def main():
     test_files.sort()
 
     for fname in test_files:
-        run_test(fname, exe)
+        run_test(f"tests/{fname}", exe)
 
 
 if __name__ == "__main__":
