@@ -8,12 +8,26 @@ By: Calacuda (yogurt) | MIT Licence | Epoch: Aug 21, 2021
 
 
 import os
+import sys
+
+
+def get_exe():
+    """gets the correct compiled binary"""
+    if os.path.isfile("target/release/clay"):
+        exe = "target/release/clay"
+    elif os.path.isfile("target/debug/clay"):
+        os.system("cargo build")
+        exe = "target/debug/clay"
+    else:
+        print("ERROR: no executable found, please compile")
+        sys.exit()
+    return exe
 
 
 def run_test(fname, exe):
     """runs a single test"""
     run_mes = f"  running :  {fname}"
-    breaker = "=" * (len(run_mes) + 3)
+    breaker = "=" * (len(run_mes) + 2)
     # print start message
     print(breaker)
     print(run_mes)
@@ -26,21 +40,13 @@ def run_test(fname, exe):
 
 def main():
     """main func"""
-    if os.path.isfile("target/release/clay"):
-        exe = "target/release/clay"
-    elif os.path.isfile("target/debug/clay"):
-        os.system("cargo build")
-        exe = "target/debug/clay"
-    else:
-        print("ERROR: no executable found, please compile")
-        return
-    fname = "test.lisp"
-    # run_test(fname, exe)
-    i = 2
-    while os.path.isfile(fname):
+    exe = get_exe()
+
+    test_files =  os.listdir("tests")
+    test_files.sort()
+
+    for fname in test_files:
         run_test(fname, exe)
-        fname = f"test{i}.lisp"
-        i += 1
 
 
 if __name__ == "__main__":
