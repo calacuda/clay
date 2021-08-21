@@ -35,3 +35,4 @@ Cargo.lock
 
 /src/iterpreter.rs
 *.txt
+*.sync-conflict-*-IMC4IIR*
