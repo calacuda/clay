@@ -21,8 +21,6 @@ def get_exe():
         print("compileing...")
         os.system("cargo build")
         exe = "target/debug/clay"
-        #print("ERROR: no executable found, please compile")
-        #sys.exit()
     return exe
 
 
