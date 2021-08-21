@@ -8,7 +8,9 @@ By: Calacuda (yogurt) | MIT Licence | Epoch: Aug 21, 2021
 
 
 import os
-import sys
+
+
+MODE = "JIT"
 
 
 def get_exe():
@@ -33,7 +35,7 @@ def run_test(fname, exe):
     print(run_mes)
     print(breaker)
     # run test
-    os.system(f"./{exe} {fname}")
+    os.system(f"./{exe} {MODE} {fname}")
     # print footer
     print(breaker, end="\n\n")
 
@@ -42,11 +44,11 @@ def main():
     """main func"""
     exe = get_exe()
 
-    test_files =  os.listdir("tests")
+    test_files =  os.listdir("test_inputs")
     test_files.sort()
 
     for fname in test_files:
-        run_test(f"tests/{fname}", exe)
+        run_test(f"test_inputs/{fname}", exe)
 
 
 if __name__ == "__main__":
