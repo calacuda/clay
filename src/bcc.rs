@@ -567,7 +567,7 @@ fn _get_bytecode<'input>(
             Some(Token::Form(_)) => code.push(Bytecode::Push(node.data.clone().unwrap())),
             _ => {
                 println!("{:?}", node.data);
-                panic!("ERROR: you should not be seeing this.");
+                panic!("ERROR: unexpected EOF!");
             }
         }
     }

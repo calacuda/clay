@@ -206,8 +206,10 @@ fn repl() {
 
     let mut rl = Editor::<()>::new();
     let stdlib = std_lib::get_std_funcs();
-
-    if rl.load_history(".clay_hist.txt").is_err() {
+    let home = std::env::var("HOME").unwrap();
+    let hist_file = format!("{}/.clay_hist.txt", home);
+	
+    if rl.load_history(&hist_file).is_err() {
         println!("No previous history.");
     }
     loop {
@@ -219,6 +221,7 @@ fn repl() {
 		let parsed = parser::parse(&line);
 		let bytecode = bcc::get_bytecode(&parsed, &stdlib);
 		bci::do_the_things(&bytecode, &stdlib);
+		rl.save_history(&hist_file).unwrap();
             },
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
@@ -234,7 +237,6 @@ fn repl() {
             }
         }
     }
-    rl.save_history(".clay_hist.txt").unwrap();
 }
 
 fn run(args: Vec<String>, jit: bool) {
