@@ -7,4 +7,5 @@ edition = "2018"
 
 [dependencies]
 libloading = "0.7"
+rustyline = "9.0.0"
 clay_lib = {path = "../clay_lib"}

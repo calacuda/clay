@@ -3,6 +3,8 @@ use clay_lib::Token;
 use std::env;
 use std::fs::read_to_string;
 use std::io::stdin;
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 
 mod bcc;
 mod parser;
@@ -200,12 +202,39 @@ fn _repl() -> String {
 }
 
 fn repl() {
-    println!("Heads up, this repl is in testing and most things don't work.\n");
+    println!("Heads up, this repl is in testing and many things don't work.\n");
 
-    let mut input = String::new();
-    loop {
-        _repl();
+    let mut rl = Editor::<()>::new();
+    let stdlib = std_lib::get_std_funcs();
+
+    if rl.load_history(".clay_hist.txt").is_err() {
+        println!("No previous history.");
     }
+    loop {
+        let readline = rl.readline("clay > ");
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str());
+                //println!("Line: {}", line);
+		let parsed = parser::parse(&line);
+		let bytecode = bcc::get_bytecode(&parsed, &stdlib);
+		bci::do_the_things(&bytecode, &stdlib);
+            },
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break
+            },
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D: disconnecting.");
+                break
+            },
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break
+            }
+        }
+    }
+    rl.save_history(".clay_hist.txt").unwrap();
 }
 
 fn run(args: Vec<String>, jit: bool) {
