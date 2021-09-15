@@ -17,6 +17,9 @@ use std::path::Path;
 
 use libloading;
 
+//crate std_lib_extra::networking;
+mod networking;
+
 // type func = fn(Vec<Token>) -> Option<()>;
 
 // the deffinitions of all standard library functions go here.
@@ -233,6 +236,7 @@ pub fn get_std_funcs<'a>() -> HashMap<
     std_funcs.insert("terpri", (Nargs::Num(0), &terpri));
     std_funcs.insert("not", (Nargs::Num(1), &not));
     std_funcs.insert("from", (Nargs::Num(2), &from));
+    std_funcs.insert("network::get", (Nargs::Num(1), &networking::get));
 
     return std_funcs;
 }
