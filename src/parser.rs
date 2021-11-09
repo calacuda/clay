@@ -31,13 +31,13 @@ impl<'arb> Node {
         }
     }
 
-    pub fn add_child(mut self, node_id: Node) -> Node {
-        self.children.push(node_id);
+    pub fn add_child(mut self, node: Node) -> Node {
+        self.children.push(node);
         return self;
     }
 
-    pub fn add_children(mut self, mut node_id: Vec<Node>) -> Node {
-        self.children.append(&mut node_id);
+    pub fn add_children(mut self, mut node: Vec<Node>) -> Node {
+        self.children.append(&mut node);
         return self;
     }
 
@@ -63,19 +63,13 @@ impl NodeID {
     }
 }
 
-// fn import<'arb>(libs: Token) -> Vec<Node> {
-//     let mut nodes: Vec<Node> = Vec::new();
-//
-//     return nodes;
-// }
-
 fn _parse<'arb>(
     lex: &mut lexer::Lexer<'arb>,
-    token: Token,
-    pid: usize,
-    uid: usize,
-    last_paren: char,
-) -> (Vec<Node>, Vec<Node>, Token, (usize, usize)) {
+    // token: Token,
+    // pid: usize,
+    // uid: usize,
+    // last_paren: char,
+) -> Vec<Node> {
     // id = id for the node.
     /*
      * this is a big, scarry, recurive function, with a loop in it. aka it's the two things
@@ -92,118 +86,49 @@ fn _parse<'arb>(
      * function "parse" which is the entry point to this file and its functionality. this fuction
      * should never be called directly from outside this file.
      */
-    let mut block = Vec::new();
-    let mut created_ids = Vec::new();
-    let mut u_id;
-    let mut tok = token;
-    let mut next_tok;
-    let mut nt_cp;
-    let mut lp = 0;
-    let mut rp = 0;
-    // println!("called on: {:?}", tok);
+    let mut block: Vec<Node> = Vec::new();
 
     loop {
-        next_tok = lex.get_token();
-        u_id = lex.pos;
-        nt_cp = next_tok.clone();
-        let id = NodeID::new(u_id);
-        let mut node = Node::new(id).set_parent(NodeID::new(pid));
-
-        // println!("{:?}, {:?}", tok, nt_cp);
-        // println!("{:?}", tok);
-
+        let tok = lex.get_token();
         match tok {
             Token::LParen => {
-                // lp += 1;
-                // if next_tok == lexer::Token::RParen {
-                //     // println!("reasigning next_tok");
-                //     // next_tok = lex.get_token();
-                //     println!("breaking");
-                //     // break;
-                // }
-
-                if next_tok != Token::RParen {
-                    // println!("added {:?} to node", next_tok);
-                    node = node.add_data(next_tok);
-                    u_id += 1;
-                    next_tok = lex.get_token();
-                    u_id = lex.pos;
-                    // println!("before: {} {}", lp, rp);
-
-                    let (mut child_block, cids, nt_cp, p_count) =
-                        _parse(lex, next_tok, uid, u_id + 1, 'l');
-
-                    // let mut child_clone = child_block.clone();
-                    block.append(&mut child_block);
-                    node = node.add_children(cids);
-                    let tmp_node = node.clone();
-                    block.push(node);
-                    created_ids.push(tmp_node);
-                    lp += p_count.0 + 1;
-                    rp += p_count.1;
-                    if nt_cp == Token::EOF {
-                        rp = 0;
-                        lp = 0;
-                    }
-                    tok = nt_cp;
-                    // println!("after: {} {}", lp, rp);
-                } else {
-                    next_tok = lex.get_token();
-                }
+                let mut children = _parse(lex);
+                let mut root = children[0].clone().add_children(children[1..].to_vec());
+                block.push(root);
             }
 
             Token::RParen => {
-                rp += 1;
-                tok = nt_cp;
-                u_id += 1;
-                if rp == lp {
-                    rp = 0;
-                    lp = 0;
-                }
                 break;
             }
 
-            Token::Symbol(_)
-            | Token::Number(_)
+            Token::Str(_)
             | Token::Bool(_)
             | Token::Form(_)
-            | Token::Str(_) => {
-                // println!("added {:?} to node", tok);
-                node = node.add_data(tok).set_parent(NodeID::new(pid));
-                let tmp_node = node.clone();
-                block.push(node);
-                created_ids.push(tmp_node);
-                tok = nt_cp;
-                u_id += 1;
+            | Token::Number(_)
+            | Token::Symbol(_) => {
+                let mut this_node = Node::new(NodeID::new(lex.pos)).add_data(tok);
+                block.push(this_node);
+                // break;
             }
 
             Token::EOF => {
-                u_id += 1;
-                // println!("{:?}, {:?}", tok, nt_cp);
-                tok = nt_cp;
-                if lp > rp {
-                    // may cause error pls error check.
-                    panic!("ERROR: unclosed left parenthesis.")
-                } else if lp < rp {
-                    panic!("ERROR: too many right parenthesis.")
-                }
+                // panic!("theres an unclosed open paren somewhere."),
                 break;
             }
         }
     }
-
-    return (block, created_ids, tok, (lp, rp));
+    return block;
 }
 
 pub fn parse(source_code: &String) -> Vec<Node> {
     let mut lex = lexer::Lexer::new(source_code);
-    let next_tok = lex.get_token();
     let u_id = lex.pos;
-    let (_, mut nodes, _, _) = _parse(&mut lex, next_tok, 0, u_id, 'l');
+    let mut nodes = _parse(&mut lex);
     nodes.sort_by_key(|d| d.id.index);
     // let mut imports = match nodes[0].data {
     //     Some(Token::Symbol(sym)) if sym == "import" => import(nodes[0].children),
     //     _ => Vec::new(),
     // }
+    // println!("nodes: {:?}", nodes);
     return nodes;
 }

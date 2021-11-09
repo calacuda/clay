@@ -1,17 +1,16 @@
-use clay_lib::Token;
-// use std::collections::HashMap;
+use clay_lib::{Nargs, Token};
+use libloading::{Library, Symbol};
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
+use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::io::stdin;
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
+use std::path::{Path, PathBuf};
 
-mod bcc;
-mod parser;
-// mod iterpreter;
-mod bci;
+// mod bcc;
 mod lexer;
-mod std_lib;
+mod parser;
 
 fn read_source(fname: &str) -> String {
     let mut cwd = env::current_dir().unwrap();
@@ -26,6 +25,7 @@ fn read_source(fname: &str) -> String {
     }
 }
 
+/*
 fn _test_parser(parserd_sc: &Vec<parser::Node>) {
     println!("Parsed Source Code:\n");
     for child in parserd_sc.iter() {
@@ -87,218 +87,167 @@ fn _test_parser3(nodes: &Vec<parser::Node>) {
         println!("\n");
     }
 }
+*/
 
-fn pp_bytecode<'input>(bytecode: &Vec<Vec<bcc::Bytecode>>) {
-    println!("bcc output:");
-    for global in bytecode {
-        for code in global {
-            println!("{:?}", code);
-        }
-        println!();
-    }
-}
+// fn test_lexer(lex: &mut lexer::Lexer) {
+//     println!("lexer tokens:\n");
+//     //for global in bytecode {
+//     loop {
+//         let tok = lex.get_token();
+//         println!("{:?}", tok);
+//         match tok {
+//             Token::EOF => break,
+//             _ => {}
+//         }
+//     }
+// }
 
-fn test_lexer(lex: &mut lexer::Lexer) {
-    println!("lexer tokens:\n");
-    //for global in bytecode {
-    loop {
-        let tok = lex.get_token();
-        println!("{:?}", tok);
-        match tok {
-            Token::EOF => break,
-            _ => {}
-        }
-    }
-}
+fn find_lib(common_name: &String) -> PathBuf {
+    let site = format!(
+        "{}/.local/lib/clay/site-packages/{}",
+        env::var("HOME").unwrap(),
+        common_name,
+    );
+    let site_packs = Path::new(&site);
+    let cur_dir = Path::new(env::current_dir().unwrap().as_os_str()).join(Path::new(
+        &common_name.replace("~", env::var("HOME").unwrap().as_str().as_ref()),
+    ));
 
-fn precomp_run(sc_name: String, test_mode: bool) {
-    let scf = read_source(&sc_name);
-
-    if test_mode {
-        let mut lex = lexer::Lexer::new(&scf);
-        test_lexer(&mut lex);
-        println!();
-    }
-
-    let parsed = parser::parse(&scf); //
-    let stdlib = std_lib::get_std_funcs(); //
-
-    if test_mode {
-        // _test_parser(&parsed);
-        // _test_parser2(&parsed[0]);
-        _test_parser3(&parsed);
-        // println!();
-    }
-    let bytecode = bcc::get_bytecode(&parsed, &stdlib); //
-    if test_mode {
-        println!("{}\n", scf);
-        pp_bytecode(&bytecode);
-        println!();
-        println!(" program out put bellow: ");
-        println!("   i                i    ");
-        println!("  \\ /              \\ /    ");
-        println!("   V                V    ");
-        println!("=========================");
-    }
-    bci::do_the_things(&bytecode, &stdlib); //
-}
-
-fn jit_run(sc_name: String, test_mode: bool) {
-    let scf = read_source(&sc_name);
-
-    if test_mode {
-        let mut lex = lexer::Lexer::new(&scf);
-        test_lexer(&mut lex);
-        println!();
-    }
-
-    let ast = parser::parse(&scf); //
-    let stdlib = std_lib::get_std_funcs(); //
-
-    if test_mode {
-        // _test_parser(&parsed);
-        // _test_parser2(&parsed[0]);
-        _test_parser3(&ast);
-        // println!();
-    }
-    if test_mode {
-        let bytecode = bcc::get_bytecode(&ast, &stdlib); //
-        println!("{}\n", scf);
-        pp_bytecode(&bytecode);
-        println!();
-        println!(" program out put bellow: ");
-        println!("   i                i    ");
-        println!("  \\ /              \\ /    ");
-        println!("   V                V    ");
-        println!("=========================");
-    }
-
-    // bci::do_the_things(&bytecode, &stdlib);
-    // println!("{:#?}", ast[0].data);
-    bci::jit_run(&ast, &stdlib);
-}
-
-fn _repl() -> String {
-    println!("clay > ");
-    let mut input = String::new();
-    let stdlib = std_lib::get_std_funcs();
-
-    loop {
-        let mut l = String::new();
-
-        stdin().read_line(&mut l).unwrap();
-        input = input + &l;
-        if l == "\n" {
-            break;
-        }
-    }
-
-    // input = input + l.as_ref();
-    let parsed = parser::parse(&input);
-    let bytecode = bcc::get_bytecode(&parsed, &stdlib);
-    bci::do_the_things(&bytecode, &stdlib);
-
-    return input;
-}
-
-fn repl() {
-    println!("Heads up, this repl is in testing and many things don't work.\n");
-
-    let mut rl = Editor::<()>::new();
-    let stdlib = std_lib::get_std_funcs();
-    let home = std::env::var("HOME").unwrap();
-    let hist_file = format!("{}/.clay_hist.txt", home);
-	
-    if rl.load_history(&hist_file).is_err() {
-        println!("No previous history.");
-    }
-    loop {
-        let readline = rl.readline("clay > ");
-        match readline {
-            Ok(line) => {
-                rl.add_history_entry(line.as_str());
-                //println!("Line: {}", line);
-		let parsed = parser::parse(&line);
-		let bytecode = bcc::get_bytecode(&parsed, &stdlib);
-		bci::do_the_things(&bytecode, &stdlib);
-		rl.save_history(&hist_file).unwrap();
-            },
-            Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
-                break
-            },
-            Err(ReadlineError::Eof) => {
-                println!("CTRL-D: disconnecting.");
-                break
-            },
-            Err(err) => {
-                println!("Error: {:?}", err);
-                break
-            }
-        }
-    }
-}
-
-fn run(args: Vec<String>, jit: bool) {
-    // let mut func = precomp_run;
-    let mut test_mode = false;
-    let mut sc_file = String::new();
-    for arg in args {
-        if arg == "-test" {
-            test_mode = true;
-        } else if arg != "-test" {
-            sc_file = arg;
-        }
-    }
-    if jit {
-        jit_run(sc_file, test_mode);
+    if cur_dir.exists() {
+        cur_dir
+    } else if site_packs.exists() {
+        site_packs.to_path_buf()
     } else {
-        precomp_run(sc_file, test_mode);
+        panic!("the library <{}> can't be found.", common_name);
     }
+}
+
+fn get_lib_contents<'a>(
+    location: &PathBuf,
+) -> HashMap<
+    String,
+    (
+        Nargs,
+        String, // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+    ),
+> {
+    let funcs = unsafe {
+        let lib = Library::new(location).unwrap();
+        let func: Symbol<
+            fn() -> HashMap<
+                String,
+                (
+                    Nargs,
+                    String,
+                    //&'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+                ),
+            >,
+        > = lib.get(b"get_funcs").unwrap();
+        let funcs = func();
+        // println!("{:#?}", funcs);
+        // for fname in funcs.keys() {
+        //     println!("{}", fname);
+        // }
+
+        /*
+        let mut fname = HashMap::new();
+        for name in funcs.keys() {
+            fname.insert(*name, funcs.get(name).unwrap().1);
+        }
+        fname
+        */
+        println!("unsafe");
+        funcs
+    };
+
+    println!("safe");
+
+    // let mut db: HashMap<
+    //     String,
+    //     (
+    //         Nargs,
+    //         &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+    //     ),
+    // > = HashMap::new();
+
+    println!("before for");
+    // println!("lisp_name :  {}", funcs[0].0);
+    // let v: Vec<Token> = vec![Token::Str("doodookaka".to_string())];
+    // println!("{:?}", funcs[0].2(&v));
+
+    // for (lisp_name, nargs, f_name) in funcs {
+    //     // println!("{:?}", lisp_name.to_owned());
+    //     db.insert(lisp_name, (nargs, f_name));
+    // }
+
+    let func_name = &funcs.get(&"write-line".to_string()).unwrap().1;
+    call_comp(
+        &location.as_os_str().to_str().unwrap().to_string(),
+        &func_name,
+        vec![Token::Str("std_lib".to_string())],
+    );
+
+    println!("after for");
+    return funcs;
+}
+
+fn import_lib<'a>(
+    lib_name: &String,
+) -> HashMap<
+    String,
+    (
+        Nargs,
+        String, // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+    ),
+> {
+    let location = find_lib(lib_name);
+    return get_lib_contents(&location);
+}
+
+fn run(sc_file: &String) {
+    let ast = parser::parse(&read_source(&sc_file));
+    /*
+    println!("ast\n{:#?}\n", ast[0].data);
+    for kid in &ast[0].children {
+        println!("{:#?}", kid.data);
+    }
+    */
+
+    for fname in import_lib(&"libstd_lib.so".to_string()).keys() {
+        println!("{}", fname);
+    }
+
+    for glob in &ast {
+        println!("{:#?}", glob.data);
+    }
+}
+
+fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) {
+    /*
+     * calls a compiled rust/c/golang/whatever function from the
+     * .so file stored in lib_name.
+     */
+    println!(
+        "lib : {}\nfunc_name : {}\nargs : {:#?}",
+        lib_name, func_name, args
+    );
+    let result = unsafe {
+        let lib = Library::new(lib_name).unwrap();
+        let func: Symbol<fn(&Vec<Token>) -> Result<Option<Token>, &'a str>> =
+            lib.get(func_name.as_bytes()).unwrap();
+        func(&args)
+    };
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let args = args[1..].to_vec();
-    // let mut test = false;
-    // if args[1] == "--test" {
-    //     run_test(read_source(&args[2].clone()));
-    // }
-    // else {
-    //     let scf = read_source(&args[1]);
-    //     let parsed = parser::parse(&scf);
-    //     let stdlib = std_lib::get_std_funcs();
-    //     let bytecode = bcc::get_bytecode(&parsed, &stdlib);
-    //     bci::do_the_things(bytecode, &stdlib);
-    // }
 
     // if args.len() == 0 {
     //     repl();
     //     return;
-    // } else if args.len() > 1 {
-    //     for arg in args {
-    //         if arg != "-test" {
-    //             // println!("{}", arg);
-    //             run(arg, true);
-    //         }
-    //     }
-    // } else {
-    //     // run(args[0].clone(), false);
-    //     jit_run(args[0].clone(), false);
     // }
 
-    if args.len() == 0 {
-        repl();
-        return;
-    }
     // let test_mode = args.contains(&"-test".to_string());
-    if args[0].to_lowercase() == "jit" {
-        run(args[1..].to_vec(), true);
-    } else if args[0].to_lowercase() == "precomp" {
-        run(args[1..].to_vec(), false);
-    } else if args[0].to_lowercase() == "normal" {
-        run(args[1..].to_vec(), false);
-    } else {
-        run(args, false);
-    }
+    run(&args[0]);
 }
