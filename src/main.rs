@@ -128,7 +128,8 @@ fn get_lib_contents<'a>(
     String,
     (
         Nargs,
-        String, // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+        String,
+        // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
     ),
 > {
     let funcs = unsafe {
@@ -139,59 +140,25 @@ fn get_lib_contents<'a>(
                 (
                     Nargs,
                     String,
-                    //&'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+                    // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
                 ),
             >,
         > = lib.get(b"get_funcs").unwrap();
         let funcs = func();
-        // println!("{:#?}", funcs);
-        // for fname in funcs.keys() {
-        //     println!("{}", fname);
-        // }
-
-        /*
-        let mut fname = HashMap::new();
-        for name in funcs.keys() {
-            fname.insert(*name, funcs.get(name).unwrap().1);
-        }
-        fname
-        */
-        println!("unsafe");
         funcs
     };
-
-    println!("safe");
-
-    // let mut db: HashMap<
-    //     String,
-    //     (
-    //         Nargs,
-    //         &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
-    //     ),
-    // > = HashMap::new();
-
-    println!("before for");
-    // println!("lisp_name :  {}", funcs[0].0);
-    // let v: Vec<Token> = vec![Token::Str("doodookaka".to_string())];
-    // println!("{:?}", funcs[0].2(&v));
-
-    // for (lisp_name, nargs, f_name) in funcs {
-    //     // println!("{:?}", lisp_name.to_owned());
-    //     db.insert(lisp_name, (nargs, f_name));
-    // }
 
     let func_name = &funcs.get(&"writeln".to_string()).unwrap().1;
     let mut args = Vec::new();
     args.push(Token::Str("std_lib".to_string()));
     args.push(Token::Str("test printer".to_string()));
 
-    call_comp(
-        &location.as_os_str().to_str().unwrap().to_string(),
-        &func_name,
-        args,
-    );
+    // call_comp(
+    //     &location.as_os_str().to_str().unwrap().to_string(),
+    //     &func_name,
+    //     args,
+    // );
 
-    println!("after for");
     return funcs;
 }
 
@@ -201,11 +168,28 @@ fn import_lib<'a>(
     String,
     (
         Nargs,
-        String, // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
+        String,
+        // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
     ),
 > {
     let location = find_lib(lib_name);
     return get_lib_contents(&location);
+}
+
+fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) {
+    /*
+     * calls a compiled rust/c/golang/whatever function from the
+     * .so file stored in lib_name.
+     */
+
+    let result = unsafe {
+        let lib = Library::new(lib_name).unwrap();
+        let func: Symbol<fn(&Vec<Token>) -> Result<Option<Token>, &'a str>> =
+            lib.get(func_name.as_bytes()).unwrap();
+        func(&args)
+    };
+
+    // return result;
 }
 
 fn run(sc_file: &String) {
@@ -217,32 +201,15 @@ fn run(sc_file: &String) {
     }
     */
 
-    for fname in import_lib(&"libstd_lib.so".to_string()).keys() {
-        println!("{}", fname);
-    }
+    import_lib(&"libstd_lib.so".to_string());
+
+    // for fname in import_lib(&"libstd_lib.so".to_string()).keys() {
+    //     println!("{}", fname);
+    // }
 
     for glob in &ast {
-        println!("{:#?}", glob.data);
+        println!("{:?}", glob.data);
     }
-}
-
-fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) {
-    /*
-     * calls a compiled rust/c/golang/whatever function from the
-     * .so file stored in lib_name.
-     */
-
-    // println!(
-    //     "lib : {}\nfunc_name : {}\nargs : {:#?}",
-    //     lib_name, func_name, args
-    // );
-
-    let result = unsafe {
-        let lib = Library::new(lib_name).unwrap();
-        let func: Symbol<fn(&Vec<Token>) -> Result<Option<Token>, &'a str>> =
-            lib.get(func_name.as_bytes()).unwrap();
-        func(&args)
-    };
 }
 
 fn main() {

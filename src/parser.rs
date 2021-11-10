@@ -103,7 +103,7 @@ fn _parse<'arb>(
 
             Token::Str(_)
             | Token::Bool(_)
-            | Token::Form(_)
+            // | Token::Form(_)
             | Token::Number(_)
             | Token::Symbol(_) => {
                 let mut this_node = Node::new(NodeID::new(lex.pos)).add_data(tok);

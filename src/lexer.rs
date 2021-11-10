@@ -157,39 +157,39 @@ impl<'input> Lexer<'input> {
                             self.col += 1;
                             return Token::RParen;
                         }
-                        '`' => {
-                            iter.next();
-                            let mut form = Vec::new();
-                            let (mut rp, mut lp) = (0, 0);
-                            self.pos += 1;
-                            self.col += 1;
-                            let mut next_tok = self.get_token();
-                            match next_tok {
-                                Token::LParen => lp += 1,
-                                _ => panic!("the \"`\" character can only be used infront of parens to create a form.")
-                            }
-                            while lp != rp {
-                                next_tok = self.get_token();
-                                match next_tok {
-                                    Token::LParen => {
-                                        lp += 1;
-                                        form.push(next_tok);
-                                    }
-                                    Token::RParen => {
-                                        rp += 1;
-                                        if rp == lp {
-                                            break;
-                                        } else {
-                                            form.push(next_tok);
-                                        }
-                                    }
-                                    Token::EOF => panic!("unclosed form."),
-                                    _ => form.push(next_tok),
-                                }
-                            }
-                            return Token::Form(Box::new(form));
-                            // return Token::RParen
-                        }
+                        // '`' => {
+                        //     iter.next();
+                        //     let mut form = Vec::new();
+                        //     let (mut rp, mut lp) = (0, 0);
+                        //     self.pos += 1;
+                        //     self.col += 1;
+                        //     let mut next_tok = self.get_token();
+                        //     match next_tok {
+                        //         Token::LParen => lp += 1,
+                        //         _ => panic!("the \"`\" character can only be used infront of parens to create a form.")
+                        //     }
+                        //     while lp != rp {
+                        //         next_tok = self.get_token();
+                        //         match next_tok {
+                        //             Token::LParen => {
+                        //                 lp += 1;
+                        //                 form.push(next_tok);
+                        //             }
+                        //             Token::RParen => {
+                        //                 rp += 1;
+                        //                 if rp == lp {
+                        //                     break;
+                        //                 } else {
+                        //                     form.push(next_tok);
+                        //                 }
+                        //             }
+                        //             Token::EOF => panic!("unclosed form."),
+                        //             _ => form.push(next_tok),
+                        //         }
+                        //     }
+                        //     return Token::Form(Box::new(form));
+                        //     // return Token::RParen
+                        // }
                         // '`' => {
                         //     iter.next();
                         //     self.pos += 1;
