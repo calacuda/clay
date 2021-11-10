@@ -180,11 +180,15 @@ fn get_lib_contents<'a>(
     //     db.insert(lisp_name, (nargs, f_name));
     // }
 
-    let func_name = &funcs.get(&"write-line".to_string()).unwrap().1;
+    let func_name = &funcs.get(&"writeln".to_string()).unwrap().1;
+    let mut args = Vec::new();
+    args.push(Token::Str("std_lib".to_string()));
+    args.push(Token::Str("test printer".to_string()));
+
     call_comp(
         &location.as_os_str().to_str().unwrap().to_string(),
         &func_name,
-        vec![Token::Str("std_lib".to_string())],
+        args,
     );
 
     println!("after for");
@@ -227,10 +231,12 @@ fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) {
      * calls a compiled rust/c/golang/whatever function from the
      * .so file stored in lib_name.
      */
-    println!(
-        "lib : {}\nfunc_name : {}\nargs : {:#?}",
-        lib_name, func_name, args
-    );
+
+    // println!(
+    //     "lib : {}\nfunc_name : {}\nargs : {:#?}",
+    //     lib_name, func_name, args
+    // );
+
     let result = unsafe {
         let lib = Library::new(lib_name).unwrap();
         let func: Symbol<fn(&Vec<Token>) -> Result<Option<Token>, &'a str>> =
