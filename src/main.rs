@@ -148,7 +148,7 @@ fn get_lib_contents<'a>(
         funcs
     };
 
-    let func_name = &funcs.get(&"writeln".to_string()).unwrap().1;
+    let func_name = &funcs.get(&"write-line".to_string()).unwrap().1;
     let mut args = Vec::new();
     args.push(Token::Str("std_lib".to_string()));
     args.push(Token::Str("test printer".to_string()));
