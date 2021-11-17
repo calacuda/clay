@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 mod lexer;
 mod parser;
 
-enum Lang_Library {
+enum LangLibrary {
     compiled(
         HashMap<
             String,
@@ -26,10 +26,11 @@ enum Lang_Library {
     lisp(String),
 }
 
-enum known_thing {
-    lisp_f(parser::Node),
-    compiled_f((String, String)), // (library, function name)
-    var(Token),
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
+enum KnownThing {
+    LispFunc(parser::Node),
+    CompiledFunc((PathBuf, String)), // (library, function name)
+    Var(Token),
 }
 
 fn read_source(fname: &str) -> String {
@@ -182,30 +183,31 @@ fn get_lib_contents<'a>(
     return funcs;
 }
 
-fn import_lib<'a>(
+fn import_comp_lib<'a>(
+    known_things: &mut HashMap<String, KnownThing>,
+    libs: &mut HashMap<String, LangLibrary>,
     lib_name: &String,
-) -> HashMap<
-    String,
-    (
-        Nargs,
-        String,
-        // &'a (dyn Fn(&Vec<Token>) -> Result<Option<Token>, &'a str>),
-    ),
-> {
+) {
     let location = find_lib(lib_name);
-    return get_lib_contents(&location);
+    let lib = get_lib_contents(&location);
+
+    for (func_name, val) in lib.iter() {
+        let thing = KnownThing::CompiledFunc((location.clone(), val.1.clone()));
+        known_things.insert(func_name.clone(), thing);
+    }
+    libs.insert(lib_name.clone(), LangLibrary::compiled(lib));
 }
 
 fn import(statement: &parser::Node) {}
 
-fn def(known_things: &mut HashMap<String, known_thing>, s_exp: &parser::Node) {
+fn def(known_things: &mut HashMap<String, KnownThing>, s_exp: &parser::Node) {
     /*
      * used to define functons or variables
      */
     // todo: write it!
 }
 
-fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) => Token {
+fn call_comp<'a>(lib_name: &PathBuf, func_name: &String, args: Vec<Token>) -> Token {
     /*
      * calls a compiled rust/c/golang/whatever function from the
      * .so file stored in lib_name.
@@ -218,42 +220,77 @@ fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) => Tok
         func(&args)
     };
 
+    return match result {
+        Ok(Some(data)) => data,
+        Ok(None) => Token::Bool(false),
+        Err(err) => panic!(
+            "function: {} form library: {:?} return with error <{}>",
+            func_name, lib_name, err
+        ),
+    };
     // return result;
 }
 
 fn call_func(
-    known_things: &mut HashMap<String, known_thing>,
-    libs: &mut HashMap<String, Lang_Library>,
+    known_things: &mut HashMap<String, KnownThing>,
+    libs: &mut HashMap<String, LangLibrary>,
     func: &Token,
     args: Vec<Token>,
-) => Token {
+) -> Token {
+    // println!("call_func :  {:?}", func);
     let f = match func {
         Token::Symbol(thing) => thing,
         _ => panic!("function name must be a symbol, not a data type or EOF!"),
     };
 
-    return match known_things.get(f) {
-        Some(known_thing::lisp_f(s_exp)) => evaluate(known_things, libs, s_exp),
-        Some(known_thing::compiled_f(f)) => call_comp(&f.0, &f.1, args),
-        Some(known_thing::var(name)) => panic!("you cant call a variable!"),
-        None => panic!("that function does not exist.")
+    let thing: KnownThing = match known_things.get(f) {
+        Some(thing) => thing.clone(),
+        None => panic!("that function does not exist."),
+    };
+
+    return match thing {
+        KnownThing::LispFunc(s_exp) => evaluate(known_things, libs, &s_exp),
+        KnownThing::CompiledFunc(f) => call_comp(&f.0, &f.1, args),
+        KnownThing::Var(name) => panic!("you cant call a variable!"),
     };
 }
 
 fn evaluate(
-    known_things: &mut HashMap<String, known_thing>,
-    libs: &mut HashMap<String, Lang_Library>,
+    known_things: &mut HashMap<String, KnownThing>,
+    libs: &mut HashMap<String, LangLibrary>,
     s_exp: &parser::Node,
-) => Token {
-    //todo: write.
-    let action = s_exp.data.unwrap();
-    let args = s_exp.children.to_vec();
+) -> Token {
+    let action = s_exp.data.as_ref().unwrap();
+    let args = &s_exp.children;
     let mut evaled_args = Vec::new();
 
     for arg in args {
         evaled_args.push(evaluate(known_things, libs, &arg));
     }
-    return call_func(known_things, libs, &  action, evaled_args);
+
+    // println!("evaluate :  {:?}", action);
+    // println!("known_things :  {:?}", known_things.keys());
+
+    return match action {
+        Token::Symbol(sym) => {
+            let thing: KnownThing = match known_things.get(sym) {
+                Some(thing) => thing.clone(),
+                None => panic!("that function or variable does not exist."),
+            };
+
+            match thing {
+                KnownThing::LispFunc(s_exp) => evaluate(known_things, libs, &s_exp),
+                KnownThing::CompiledFunc(f) => call_comp(&f.0, &f.1, evaled_args),
+                KnownThing::Var(name) => panic!("you cant call a variable!"),
+            }
+        }
+        Token::Str(_) | Token::Bool(_) | Token::Number(_) => action.clone(),
+        Token::LParen | Token::RParen | Token::EOF => {
+            panic!("there should be no parens or EOF tokens here.")
+        }
+    };
+
+    // return call_func(known_things, libs, &action, evaled_args);
 }
 
 fn run(sc_file: &String) {
@@ -264,20 +301,26 @@ fn run(sc_file: &String) {
         println!("{:#?}", kid.data);
     }
     */
-    let mut libraries: HashMap<String, Lang_Library> = HashMap::new(); // holds all libraries except the std_lib,
-                                                                       // which gets dumped into known_things
+    let mut libraries: HashMap<String, LangLibrary> = HashMap::new(); // holds all libraries except the std_lib,
+                                                                      // which gets dumped into known_things
 
-    let mut known_things: HashMap<String, known_thing> = HashMap::new();
+    let mut known_things: HashMap<String, KnownThing> = HashMap::new();
 
-    let std_lib = import_lib(&"libstd_lib.so".to_string());
-    libraries.insert("std_lib".to_string(), Lang_Library::compiled(std_lib));
+    let std_lib = import_comp_lib(
+        &mut known_things,
+        &mut libraries,
+        &"libstd_lib.so".to_string(),
+    );
+    // libraries.insert("std_lib".to_string(), LangLibrary::compiled(std_lib));
 
     // for fname in import_lib(&"libstd_lib.so".to_string()).keys() {
     //     println!("{}", fname);
     // }
 
+    // println!("run: known_things :  {:?}", known_things.keys());
+
     for glob in &ast {
-        println!("{:?}", glob.data);
+        // println!("{:?}", glob.data);
 
         let root_exec = match &glob.data {
             Some(thing) => thing,
@@ -289,7 +332,7 @@ fn run(sc_file: &String) {
             Token::Symbol(s) if s == "defun" || s == "let" => def(&mut known_things, glob),
             _ => {
                 let _ = evaluate(&mut known_things, &mut libraries, glob);
-            },
+            }
         };
     }
 }

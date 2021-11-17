@@ -6,7 +6,8 @@ use crate::lexer;
 use clay_lib::Token;
 // use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+// #[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct Node {
     pub parent_id: Option<NodeID>,
     pub id: NodeID,
@@ -15,7 +16,7 @@ pub struct Node {
     // pub bytecode: Vec<Bytecode<'arb>>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Copy)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy, Hash)]
 pub struct NodeID {
     pub index: usize,
 }
