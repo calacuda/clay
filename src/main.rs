@@ -205,7 +205,7 @@ fn def(known_things: &mut HashMap<String, known_thing>, s_exp: &parser::Node) {
     // todo: write it!
 }
 
-fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) {
+fn call_comp<'a>(lib_name: &String, func_name: &String, args: Vec<Token>) => Token {
     /*
      * calls a compiled rust/c/golang/whatever function from the
      * .so file stored in lib_name.
@@ -225,15 +225,16 @@ fn call_func(
     known_things: &mut HashMap<String, known_thing>,
     libs: &mut HashMap<String, Lang_Library>,
     func: &Token,
-) {
+    args: Vec<Token>,
+) => Token {
     let f = match func {
         Token::Symbol(thing) => thing,
         _ => panic!("function name must be a symbol, not a data type or EOF!"),
     };
 
-    match known_things.get(f) {
+    return match known_things.get(f) {
         Some(known_thing::lisp_f(s_exp)) => evaluate(known_things, libs, s_exp),
-        Some(known_thing::compiled_f(f)) => {}
+        Some(known_thing::compiled_f(f)) => call_comp(&f.0, &f.1, args),
         Some(known_thing::var(name)) => panic!("you cant call a variable!"),
         None => panic!("that function does not exist.")
     };
@@ -243,15 +244,16 @@ fn evaluate(
     known_things: &mut HashMap<String, known_thing>,
     libs: &mut HashMap<String, Lang_Library>,
     s_exp: &parser::Node,
-) => parser::Node {
+) => Token {
     //todo: write.
-    if 
-    let action = s_exp.data.clone().unwrap();
+    let action = s_exp.data.unwrap();
     let args = s_exp.children.to_vec();
+    let mut evaled_args = Vec::new();
 
     for arg in args {
-        evaluate(known_things, libs, &arg);
+        evaled_args.push(evaluate(known_things, libs, &arg));
     }
+    return call_func(known_things, libs, &  action, evaled_args);
 }
 
 fn run(sc_file: &String) {
@@ -285,7 +287,9 @@ fn run(sc_file: &String) {
         match root_exec {
             Token::Symbol(s) if s == "import" => import(glob),
             Token::Symbol(s) if s == "defun" || s == "let" => def(&mut known_things, glob),
-            _ => evaluate(&mut known_things, &mut libraries, glob),
+            _ => {
+                let _ = evaluate(&mut known_things, &mut libraries, glob);
+            },
         };
     }
 }
