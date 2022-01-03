@@ -70,7 +70,7 @@ fn _parse<'arb>(
     // pid: usize,
     // uid: usize,
     // last_paren: char,
-) -> Vec<Node> {
+) -> Vec<Token> {
     // id = id for the node.
     /*
      * this is a big, scarry, recurive function, with a loop in it. aka it's the two things
@@ -87,15 +87,19 @@ fn _parse<'arb>(
      * function "parse" which is the entry point to this file and its functionality. this fuction
      * should never be called directly from outside this file.
      */
-    let mut block: Vec<Node> = Vec::new();
+    let mut block: Vec<Token> = Vec::new();
 
     loop {
         let tok = lex.get_token();
         match tok {
             Token::LParen => {
+                // let mut children = _parse(lex);
+                // let mut root = children[0].clone().add_children(children[1..].to_vec());
+                // let mut root = Node::new(NodeID::new(lex.pos))
+                //                .add_data(tok)
+                //                .add_children(children);
                 let mut children = _parse(lex);
-                let mut root = children[0].clone().add_children(children[1..].to_vec());
-                block.push(root);
+                block.push(Token::Form(children));
             }
 
             Token::RParen => {
@@ -107,9 +111,13 @@ fn _parse<'arb>(
             // | Token::Form(_)
             | Token::Number(_)
             | Token::Symbol(_) => {
-                let mut this_node = Node::new(NodeID::new(lex.pos)).add_data(tok);
-                block.push(this_node);
-                // break;
+                // let mut this_node = Node::new(NodeID::new(lex.pos)).add_data(tok);
+                // block.push(this_node);
+                block.push(tok)
+            }
+
+            Token::Form(_) => {
+                panic!("lexer returned a form and the parser was not ready. pls fix!")
             }
 
             Token::EOF => {
@@ -118,14 +126,15 @@ fn _parse<'arb>(
             }
         }
     }
+
     return block;
 }
 
-pub fn parse(source_code: &String) -> Vec<Node> {
+pub fn parse(source_code: &String) -> Vec<Token> {
     let mut lex = lexer::Lexer::new(source_code);
     let u_id = lex.pos;
     let mut nodes = _parse(&mut lex);
-    nodes.sort_by_key(|d| d.id.index);
+    // nodes.sort_by_key(|d| d.id.index);
     // let mut imports = match nodes[0].data {
     //     Some(Token::Symbol(sym)) if sym == "import" => import(nodes[0].children),
     //     _ => Vec::new(),
