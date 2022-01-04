@@ -445,7 +445,6 @@ fn evaluate(
         }
     }
 
-
     // println!("evaluate :  {:?}", action);
     // println!("known_things :  {:?}", known_things.keys());
 
